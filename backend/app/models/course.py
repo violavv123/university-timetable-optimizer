@@ -8,18 +8,18 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
 
 if TYPE_CHECKING:
-    from app.models.study_program import StudyProgram
+    from app.models.curriculum_course import CurriculumCourse
 
 
-class Faculty(Base):
-    __tablename__ = "faculties"
+class Course(Base):
+    __tablename__ = "courses"
     __table_args__ = (
-        UniqueConstraint("code", name="uq_faculties_code"),
+        UniqueConstraint("code", name="uq_courses_code"),
     )
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
     code: Mapped[str] = mapped_column(String(30), nullable=False)
-    name: Mapped[str] = mapped_column(String(150), nullable=False)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
     is_active: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
@@ -27,8 +27,8 @@ class Faculty(Base):
         server_default=true(),
     )
 
-    study_programs: Mapped[list[StudyProgram]] = relationship(
-        "StudyProgram",
-        back_populates="faculty",
+    curriculum_courses: Mapped[list[CurriculumCourse]] = relationship(
+        "CurriculumCourse",
+        back_populates="course",
         lazy="selectin",
     )

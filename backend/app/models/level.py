@@ -1,68 +1,48 @@
-from datetime import datetime
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
-    DateTime,
+    Identity,
     Integer,
+    SmallInteger,
     String,
-    func,
+    UniqueConstraint,
+    true,
 )
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from ..database import Base
+from app.database import Base
+
+if TYPE_CHECKING:
+    from app.models.study_program import StudyProgram
 
 
 class Level(Base):
     __tablename__ = "levels"
-
     __table_args__ = (
+        UniqueConstraint("code", name="uq_levels_code"),
         CheckConstraint(
             "semester_count > 0",
             name="ck_levels_semester_count_positive",
         ),
     )
 
-    id: Mapped[int] = mapped_column(
-        primary_key=True,
-        autoincrement=True,
-    )
-
-    code: Mapped[str] = mapped_column(
-        String(10),
-        nullable=False,
-        unique=True,
-        index=True,
-    )
-
-    name: Mapped[str] = mapped_column(
-        String(50),
-        nullable=False,
-        unique=True,
-    )
-
-    semester_count: Mapped[int] = mapped_column(
-        Integer,
-        nullable=False,
-    )
-
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    code: Mapped[str] = mapped_column(String(20), nullable=False)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    semester_count: Mapped[int] = mapped_column(SmallInteger, nullable=False)
     is_active: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
         default=True,
-        server_default="true",
+        server_default=true(),
     )
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        nullable=False,
-        server_default=func.now(),
+    study_programs: Mapped[list[StudyProgram]] = relationship(
+        "StudyProgram",
+        back_populates="level",
+        lazy="selectin",
     )
-
-    def __repr__(self) -> str:
-        return (
-            f"Level(id={self.id!r}, "
-            f"code={self.code!r}, "
-            f"name={self.name!r}, "
-            f"semester_count={self.semester_count!r})"
-        )
