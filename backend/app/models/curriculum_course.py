@@ -25,6 +25,7 @@ if TYPE_CHECKING:
     from app.models.course import Course
     from app.models.elective_group import ElectiveGroup
     from app.models.program_semester import ProgramSemester
+    from app.models.course_offering import CourseOffering
 
 
 class CurriculumCourse(Base):
@@ -113,4 +114,10 @@ class CurriculumCourse(Base):
     elective_group: Mapped[ElectiveGroup | None] = relationship(
         "ElectiveGroup",
         back_populates="curriculum_courses",
+    )
+
+    course_offerings: Mapped[list[CourseOffering]] = relationship(
+        "CourseOffering",
+        back_populates="curriculum_course",
+        lazy="selectin",
     )

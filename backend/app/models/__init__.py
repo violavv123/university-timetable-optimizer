@@ -14,6 +14,14 @@ from app.models.staff_course import StaffCourse
 from app.models.staff_availability import StaffAvailability
 from app.models.program_room_preference import ProgramRoomPreference
 from app.models.student_group import StudentGroup
+from app.models.course_offering import CourseOffering
+from app.models.course_session import CourseSession
+from app.models.course_session_dependency import CourseSessionDependency
+from app.models.course_session_group import CourseSessionGroup
+from app.models.course_session_staff import CourseSessionStaff
+from app.models.course_session_time_constraint import CourseSessionTimeConstraint
+from app.models.scheduling_profile import SchedulingProfile
+from app.models.time_slot import TimeSlot
 
 __all__ = [
     "AcademicTerm",
@@ -32,4 +40,12 @@ __all__ = [
     "StaffAvailability",
     "ProgramRoomPreference",
     "StudentGroup",
+    "CourseOffering",
+    "CourseSession",
+    "CourseSessionDependency",
+    "CourseSessionGroup",
+    "CourseSessionStaff",
+    "CourseSessionTimeConstraint",
+    "SchedulingProfile",
+    "TimeSlot",
 ]

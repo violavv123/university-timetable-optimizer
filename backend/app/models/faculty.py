@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from app.models.study_program import StudyProgram
     from app.models.room import Room
     from app.models.staff_member import StaffMember
+    from app.models.scheduling_profile import SchedulingProfile
 
 
 class Faculty(Base):
@@ -43,6 +44,12 @@ class Faculty(Base):
 
     rooms: Mapped[list[Room]] = relationship(
         "Room",
+        back_populates="faculty",
+        lazy="selectin",
+    )
+
+    scheduling_profiles: Mapped[list[SchedulingProfile]] = relationship(
+        "SchedulingProfile",
         back_populates="faculty",
         lazy="selectin",
     )

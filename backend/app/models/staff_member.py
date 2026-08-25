@@ -21,6 +21,7 @@ if TYPE_CHECKING:
     from app.models.faculty import Faculty
     from app.models.staff_availability import StaffAvailability
     from app.models.staff_course import StaffCourse
+    from app.models.course_session_staff import CourseSessionStaff
 
 
 class StaffMember(Base):
@@ -71,6 +72,12 @@ class StaffMember(Base):
     )
     availabilities: Mapped[list[StaffAvailability]] = relationship(
         "StaffAvailability",
+        back_populates="staff_member",
+        lazy="selectin",
+    )
+
+    session_assignments: Mapped[list[CourseSessionStaff]] = relationship(
+        "CourseSessionStaff",
         back_populates="staff_member",
         lazy="selectin",
     )

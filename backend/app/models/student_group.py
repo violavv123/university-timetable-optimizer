@@ -21,6 +21,7 @@ from app.models.enums import StudentGroupType
 if TYPE_CHECKING:
     from app.models.academic_term import AcademicTerm
     from app.models.program_semester import ProgramSemester
+    from app.models.course_session_group import CourseSessionGroup
 
 
 class StudentGroup(Base):
@@ -88,5 +89,11 @@ class StudentGroup(Base):
     child_groups: Mapped[list[StudentGroup]] = relationship(
         "StudentGroup",
         back_populates="parent_group",
+        lazy="selectin",
+    )
+
+    session_assignments: Mapped[list[CourseSessionGroup]] = relationship(
+        "CourseSessionGroup",
+        back_populates="student_group",
         lazy="selectin",
     )
