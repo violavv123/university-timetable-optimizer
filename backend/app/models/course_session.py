@@ -31,6 +31,7 @@ if TYPE_CHECKING:
         CourseSessionTimeConstraint,
     )
     from app.models.room import Room
+    from app.models.timetable_entry import TimetableEntry
 
 
 class CourseSession(Base):
@@ -136,5 +137,11 @@ class CourseSession(Base):
         "CourseSessionDependency",
         foreign_keys="CourseSessionDependency.successor_session_id",
         back_populates="successor_session",
+        lazy="selectin",
+    )
+
+    timetable_entries: Mapped[list[TimetableEntry]] = relationship(
+        "TimetableEntry",
+        back_populates="course_session",
         lazy="selectin",
     )

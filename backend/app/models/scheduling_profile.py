@@ -21,6 +21,7 @@ from app.database import Base
 if TYPE_CHECKING:
     from app.models.faculty import Faculty
     from app.models.time_slot import TimeSlot
+    from app.models.timetable_run import TimetableRun
 
 
 class SchedulingProfile(Base):
@@ -139,6 +140,12 @@ class SchedulingProfile(Base):
     )
     time_slots: Mapped[list[TimeSlot]] = relationship(
         "TimeSlot",
+        back_populates="scheduling_profile",
+        lazy="selectin",
+    )
+
+    timetable_runs: Mapped[list[TimetableRun]] = relationship(
+        "TimetableRun",
         back_populates="scheduling_profile",
         lazy="selectin",
     )

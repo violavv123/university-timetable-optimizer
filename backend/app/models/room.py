@@ -22,6 +22,7 @@ if TYPE_CHECKING:
     from app.models.program_room_preference import ProgramRoomPreference
     from app.models.room_availability import RoomAvailability
     from app.models.course_session import CourseSession
+    from app.models.timetable_entry import TimetableEntry
 
 
 class Room(Base):
@@ -80,5 +81,11 @@ class Room(Base):
     required_by_sessions: Mapped[list[CourseSession]] = relationship(
         "CourseSession",
         back_populates="required_room",
+        lazy="selectin",
+    )
+
+    timetable_entries: Mapped[list[TimetableEntry]] = relationship(
+        "TimetableEntry",
+        back_populates="room",
         lazy="selectin",
     )

@@ -22,6 +22,8 @@ from app.models.course_session_staff import CourseSessionStaff
 from app.models.course_session_time_constraint import CourseSessionTimeConstraint
 from app.models.scheduling_profile import SchedulingProfile
 from app.models.time_slot import TimeSlot
+from app.models.timetable_entry import TimetableEntry
+from app.models.timetable_run import TimetableRun
 
 __all__ = [
     "AcademicTerm",
@@ -48,4 +50,6 @@ __all__ = [
     "CourseSessionTimeConstraint",
     "SchedulingProfile",
     "TimeSlot",
+    "TimetableEntry",
+    "TimetableRun",
 ]

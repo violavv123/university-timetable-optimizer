@@ -26,6 +26,7 @@ if TYPE_CHECKING:
     from app.models.staff_availability import StaffAvailability
     from app.models.student_group import StudentGroup
     from app.models.course_offering import CourseOffering
+    from app.models.timetable_run import TimetableRun
 
 
 class AcademicTerm(Base):
@@ -90,6 +91,12 @@ class AcademicTerm(Base):
 
     course_offerings: Mapped[list[CourseOffering]] = relationship(
         "CourseOffering",
+        back_populates="academic_term",
+        lazy="selectin",
+    )
+
+    timetable_runs: Mapped[list[TimetableRun]] = relationship(
+        "TimetableRun",
         back_populates="academic_term",
         lazy="selectin",
     )
