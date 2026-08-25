@@ -2,13 +2,15 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, Identity, Integer, String, UniqueConstraint, true
+from sqlalchemy import Boolean, Integer, String, UniqueConstraint, true
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
 
 if TYPE_CHECKING:
     from app.models.study_program import StudyProgram
+    from app.models.room import Room
+    from app.models.staff_member import StaffMember
 
 
 class Faculty(Base):
@@ -29,6 +31,18 @@ class Faculty(Base):
 
     study_programs: Mapped[list[StudyProgram]] = relationship(
         "StudyProgram",
+        back_populates="faculty",
+        lazy="selectin",
+    )
+
+    staff_members: Mapped[list[StaffMember]] = relationship(
+        "StaffMember",
+        back_populates="faculty",
+        lazy="selectin",
+    )
+
+    rooms: Mapped[list[Room]] = relationship(
+        "Room",
         back_populates="faculty",
         lazy="selectin",
     )

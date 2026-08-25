@@ -10,6 +10,7 @@ from sqlalchemy import (
     Integer,
     SmallInteger,
     UniqueConstraint,
+    text,
     true,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -17,23 +18,21 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
 
 if TYPE_CHECKING:
-    from app.models.curriculum_course import CurriculumCourse
-    from app.models.elective_group import ElectiveGroup
+    from app.models.room import Room
     from app.models.study_program import StudyProgram
-    from app.models.student_group import StudentGroup
 
 
-class ProgramSemester(Base):
-    __tablename__ = "program_semesters"
+class ProgramRoomPreference(Base):
+    __tablename__ = "program_room_preferences"
     __table_args__ = (
         UniqueConstraint(
             "study_program_id",
-            "semester_number",
-            name="uq_program_semesters_program_number",
+            "room_id",
+            name="uq_program_room_preferences_program_room",
         ),
         CheckConstraint(
-            "semester_number > 0",
-            name="semester_number_positive",
+            "penalty_weight >= 0",
+            name="penalty_weight_nonnegative",
         ),
     )
 
@@ -42,9 +41,15 @@ class ProgramSemester(Base):
         ForeignKey("study_programs.id"),
         nullable=False,
     )
-    semester_number: Mapped[int] = mapped_column(
+    room_id: Mapped[int] = mapped_column(
+        ForeignKey("rooms.id"),
+        nullable=False,
+    )
+    penalty_weight: Mapped[int] = mapped_column(
         SmallInteger,
         nullable=False,
+        default=1,
+        server_default=text("1"),
     )
     is_active: Mapped[bool] = mapped_column(
         Boolean,
@@ -55,21 +60,9 @@ class ProgramSemester(Base):
 
     study_program: Mapped[StudyProgram] = relationship(
         "StudyProgram",
-        back_populates="program_semesters",
+        back_populates="room_preferences",
     )
-    elective_groups: Mapped[list[ElectiveGroup]] = relationship(
-        "ElectiveGroup",
-        back_populates="program_semester",
-        lazy="selectin",
-    )
-    curriculum_courses: Mapped[list[CurriculumCourse]] = relationship(
-        "CurriculumCourse",
-        back_populates="program_semester",
-        lazy="selectin",
-    )
-
-    student_groups: Mapped[list[StudentGroup]] = relationship(
-        "StudentGroup",
-        back_populates="program_semester",
-        lazy="selectin",
+    room: Mapped[Room] = relationship(
+        "Room",
+        back_populates="program_preferences",
     )

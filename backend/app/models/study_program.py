@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from app.models.faculty import Faculty
     from app.models.level import Level
     from app.models.program_semester import ProgramSemester
+    from app.models.program_room_preference import ProgramRoomPreference
 
 
 class StudyProgram(Base):
@@ -60,6 +61,12 @@ class StudyProgram(Base):
     )
     program_semesters: Mapped[list[ProgramSemester]] = relationship(
         "ProgramSemester",
+        back_populates="study_program",
+        lazy="selectin",
+    )
+
+    room_preferences: Mapped[list[ProgramRoomPreference]] = relationship(
+        "ProgramRoomPreference",
         back_populates="study_program",
         lazy="selectin",
     )

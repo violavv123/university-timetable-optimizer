@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
-    Identity,
     Integer,
     SmallInteger,
     String,

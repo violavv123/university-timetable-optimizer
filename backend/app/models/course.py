@@ -9,6 +9,7 @@ from app.database import Base
 
 if TYPE_CHECKING:
     from app.models.curriculum_course import CurriculumCourse
+    from app.models.staff_course import StaffCourse
 
 
 class Course(Base):
@@ -29,6 +30,12 @@ class Course(Base):
 
     curriculum_courses: Mapped[list[CurriculumCourse]] = relationship(
         "CurriculumCourse",
+        back_populates="course",
+        lazy="selectin",
+    )
+
+    staff_courses: Mapped[list[StaffCourse]] = relationship(
+        "StaffCourse",
         back_populates="course",
         lazy="selectin",
     )

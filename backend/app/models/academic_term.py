@@ -22,6 +22,9 @@ from app.models.enums import TermType
 
 if TYPE_CHECKING:
     from app.models.academic_year import AcademicYear
+    from app.models.room_availability import RoomAvailability
+    from app.models.staff_availability import StaffAvailability
+    from app.models.student_group import StudentGroup
 
 
 class AcademicTerm(Base):
@@ -64,4 +67,22 @@ class AcademicTerm(Base):
     academic_year: Mapped[AcademicYear] = relationship(
         "AcademicYear",
         back_populates="academic_terms",
+    )
+
+    staff_availabilities: Mapped[list[StaffAvailability]] = relationship(
+        "StaffAvailability",
+        back_populates="academic_term",
+        lazy="selectin",
+    )
+
+    student_groups: Mapped[list[StudentGroup]] = relationship(
+        "StudentGroup",
+        back_populates="academic_term",
+        lazy="selectin",
+    )
+
+    room_availabilities: Mapped[list[RoomAvailability]] = relationship(
+        "RoomAvailability",
+        back_populates="academic_term",
+        lazy="selectin",
     )
