@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, Enum as SqlEnum, ForeignKey, Integer, false, true
+from sqlalchemy import Boolean, Enum as SqlEnum, ForeignKey, Index, Integer, false, true
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -15,6 +15,13 @@ if TYPE_CHECKING:
 
 class CourseSessionStaff(Base):
     __tablename__ = "course_session_staff"
+
+    __table_args__ = (
+        Index(
+            "ix_course_session_staff_staff_member_id",
+            "staff_member_id",
+        ),
+    )
 
     course_session_id: Mapped[int] = mapped_column(
         Integer,

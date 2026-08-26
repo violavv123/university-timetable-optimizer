@@ -10,6 +10,7 @@ from sqlalchemy import (
     Enum as SqlEnum,
     ForeignKey,
     Identity,
+    Index,
     Integer,
     SmallInteger,
     UniqueConstraint,
@@ -37,6 +38,15 @@ class TimetableEntry(Base):
             "course_session_id",
             "occurrence_number",
             name="uq_timetable_entries_run_session_occurrence",
+        ),
+        Index(
+            "ix_timetable_entries_run_start_slot",
+            "timetable_run_id",
+            "start_slot_id",
+        ),
+        Index(
+            "ix_timetable_entries_room_id",
+            "room_id",
         ),
         CheckConstraint(
             "occurrence_number > 0",

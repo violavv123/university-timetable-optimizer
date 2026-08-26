@@ -9,6 +9,7 @@ from sqlalchemy import (
     Enum as SqlEnum,
     ForeignKey,
     Identity,
+    Index,
     Integer,
     Numeric,
     SmallInteger,
@@ -35,6 +36,10 @@ class CurriculumCourse(Base):
             "program_semester_id",
             "course_id",
             name="uq_curriculum_courses_semester_course",
+        ),
+        Index(
+            "ix_curriculum_courses_course_id",
+            "course_id",
         ),
         CheckConstraint("ects > 0", name="ects_positive"),
         CheckConstraint(

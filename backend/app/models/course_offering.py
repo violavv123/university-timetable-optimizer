@@ -7,6 +7,7 @@ from sqlalchemy import (
     Enum as SqlEnum,
     ForeignKey,
     Identity,
+    Index,
     Integer,
     UniqueConstraint,
     text,
@@ -29,6 +30,10 @@ class CourseOffering(Base):
             "curriculum_course_id",
             "academic_term_id",
             name="uq_course_offerings_curriculum_term",
+        ),
+        Index(
+            "ix_course_offerings_academic_term_id",
+            "academic_term_id",
         ),
         CheckConstraint(
             "expected_students IS NULL OR expected_students > 0",

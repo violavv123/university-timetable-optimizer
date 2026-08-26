@@ -143,6 +143,12 @@ from app.schemas.timetable_run import (
     TimetableRunSummary,
     TimetableRunUpdate,
 )
+from app.schemas.common import (
+    MessageResponse,
+    PaginatedResponse,
+    PaginationParams,
+    ValidationErrorDetail,
+)
 
 __all__ = [
     "AcademicTermBase",
@@ -261,5 +267,9 @@ __all__ = [
     "TimetableRunSummary",
     "TimetableRunUpdate",
     "TimetableValidationResult",
+    "MessageResponse",
+    "PaginatedResponse",
+    "PaginationParams",
+    "ValidationErrorDetail",
 ]
 

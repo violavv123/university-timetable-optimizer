@@ -8,6 +8,7 @@ from sqlalchemy import (
     Enum as SqlEnum,
     ForeignKey,
     Identity,
+    Index,
     Integer,
     String,
     UniqueConstraint,
@@ -32,6 +33,11 @@ class StudentGroup(Base):
             "academic_term_id",
             "name",
             name="uq_student_groups_semester_term_name",
+        ),
+        Index(
+            "ix_student_groups_term_semester",
+            "academic_term_id",
+            "program_semester_id",
         ),
         CheckConstraint(
             "student_count > 0",

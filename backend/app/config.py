@@ -8,6 +8,9 @@ BACKEND_DIR = Path(__file__).resolve().parent.parent
 
 class Settings(BaseSettings):
     database_url: str
+    frontend_url: str = "http://localhost:5173"
+    app_name: str = "University Timetable Optimizer"
+    debug: bool = False
 
     model_config = SettingsConfigDict(
         env_file=BACKEND_DIR / ".env",

@@ -8,6 +8,7 @@ from sqlalchemy import (
     Enum as SqlEnum,
     ForeignKey,
     Identity,
+    Index,
     Integer,
     SmallInteger,
     Time,
@@ -24,6 +25,10 @@ if TYPE_CHECKING:
 class CourseSessionTimeConstraint(Base):
     __tablename__ = "course_session_time_constraints"
     __table_args__ = (
+        Index(
+            "ix_course_session_time_constraints_session_id",
+            "course_session_id",
+        ),
         CheckConstraint(
             "day_of_week IS NULL OR day_of_week BETWEEN 1 AND 7",
             name="day_of_week_valid",

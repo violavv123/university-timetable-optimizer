@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, Integer
+from sqlalchemy import ForeignKey, Index, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -14,6 +14,13 @@ if TYPE_CHECKING:
 
 class CourseSessionGroup(Base):
     __tablename__ = "course_session_groups"
+
+    __table_args__ = (
+        Index(
+            "ix_course_session_groups_student_group_id",
+            "student_group_id",
+        ),
+    )
 
     course_session_id: Mapped[int] = mapped_column(
         Integer,

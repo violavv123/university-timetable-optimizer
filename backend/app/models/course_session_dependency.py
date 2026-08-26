@@ -7,6 +7,7 @@ from sqlalchemy import (
     Enum as SqlEnum,
     ForeignKey,
     Identity,
+    Index,
     Integer,
     SmallInteger,
     UniqueConstraint,
@@ -28,6 +29,10 @@ class CourseSessionDependency(Base):
             "successor_session_id",
             "dependency_type",
             name="uq_course_session_dependencies_pair_type",
+        ),
+        Index(
+            "ix_course_session_dependencies_successor_id",
+            "successor_session_id",
         ),
         CheckConstraint(
             "predecessor_session_id <> successor_session_id",

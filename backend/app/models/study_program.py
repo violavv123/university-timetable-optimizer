@@ -6,6 +6,7 @@ from sqlalchemy import (
     Boolean,
     ForeignKey,
     Identity,
+    Index,
     Integer,
     String,
     UniqueConstraint,
@@ -30,6 +31,10 @@ class StudyProgram(Base):
             "level_id",
             "code",
             name="uq_study_programs_faculty_level_code",
+        ),
+        Index(
+            "ix_study_programs_level_id",
+            "level_id",
         ),
     )
 

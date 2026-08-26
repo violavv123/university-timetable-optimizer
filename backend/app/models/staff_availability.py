@@ -8,6 +8,7 @@ from sqlalchemy import (
     Enum as SqlEnum,
     ForeignKey,
     Identity,
+    Index,
     Integer,
     SmallInteger,
     Time,
@@ -28,6 +29,11 @@ class StaffAvailability(Base):
         CheckConstraint(
             "day_of_week BETWEEN 1 AND 7",
             name="day_of_week_valid",
+        ),
+        Index(
+            "ix_staff_availability_staff_term",
+            "staff_member_id",
+            "academic_term_id",
         ),
         CheckConstraint(
             "end_time > start_time",

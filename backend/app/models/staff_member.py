@@ -7,6 +7,7 @@ from sqlalchemy import (
     Enum as SqlEnum,
     ForeignKey,
     Identity,
+    Index,
     Integer,
     String,
     UniqueConstraint,
@@ -28,6 +29,10 @@ class StaffMember(Base):
     __tablename__ = "staff_members"
     __table_args__ = (
         UniqueConstraint("email", name="uq_staff_members_email"),
+        Index(
+            "ix_staff_members_faculty_id",
+            "faculty_id",
+        ),
     )
 
     id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
