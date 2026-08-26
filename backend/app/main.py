@@ -1,11 +1,20 @@
 from fastapi import FastAPI
+from app.core.exception_handlers import register_exception_handlers
 from fastapi.middleware.cors import CORSMiddleware
+
+from collections.abc import Generator
+
+from sqlalchemy.orm import Session
+
+from app.database import SessionLocal
 
 app = FastAPI(
     title="University Timetable Optimizer API",
     description="API for university timetable generation and resource allocation",
     version="0.1.0",
 )
+
+register_exception_handlers(app)
 
 app.add_middleware(
     CORSMiddleware,
@@ -22,3 +31,13 @@ def health_check():
         "status": "healthy",
         "message": "University Timetable Optimizer API is running"
     }
+
+def get_db() -> Generator[Session, None, None]:
+    db = SessionLocal()
+    try:
+        yield db
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()

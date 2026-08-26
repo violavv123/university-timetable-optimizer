@@ -58,6 +58,7 @@ from app.schemas.elective_group import (
     ElectiveGroupRead,
     ElectiveGroupUpdate,
 )
+from app.schemas.error import ErrorResponse
 from app.schemas.faculty import FacultyBase, FacultyCreate, FacultyRead, FacultyUpdate
 from app.schemas.level import LevelBase, LevelCreate, LevelRead, LevelUpdate
 from app.schemas.program_room_preference import (
@@ -187,6 +188,7 @@ __all__ = [
     "ElectiveGroupCreate",
     "ElectiveGroupRead",
     "ElectiveGroupUpdate",
+    "ErrorResponse",
     "FacultyBase",
     "FacultyCreate",
     "FacultyRead",

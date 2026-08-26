@@ -100,18 +100,9 @@ class ValidationErrorDetail(BaseModel):
     )
 
 
-class ValidationErrorResponse(BaseModel):
-    """Response containing all request-validation errors."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    detail: list[ValidationErrorDetail] = Field(default_factory=list)
-
-
 __all__ = [
     "MessageResponse",
     "PaginationParams",
     "PaginatedResponse",
     "ValidationErrorDetail",
-    "ValidationErrorResponse",
 ]
