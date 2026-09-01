@@ -13,7 +13,8 @@ class CurriculumCourseBase(BaseModel):
     course_id: int = Field(..., gt=0)
     course_type: CourseType
     elective_group_id: int | None = Field(default=None, gt=0)
-    ects: Decimal = Field(..., gt=0, max_digits=4, decimal_places=1)
+    ects: Decimal = Field(..., gt=0, le=30, max_digits=4, decimal_places=1)
+    requires_timetable: bool = True
     lecture_periods_per_week: int = Field(default=0, ge=0, le=32767)
     numerical_periods_per_week: int = Field(default=0, ge=0, le=32767)
     laboratory_periods_per_week: int = Field(default=0, ge=0, le=32767)
@@ -25,8 +26,11 @@ class CurriculumCourseBase(BaseModel):
             + self.numerical_periods_per_week
             + self.laboratory_periods_per_week
         )
-        if total_periods <= 0:
-            raise ValueError("at least one weekly teaching period is required")
+        if self.requires_timetable and total_periods <= 0:
+            raise ValueError(
+                "at least one weekly teaching period is required "
+                "when requires_timetable is true"
+            )
 
         if self.course_type == CourseType.MANDATORY and self.elective_group_id is not None:
             raise ValueError("mandatory courses cannot belong to an elective group")
@@ -48,7 +52,8 @@ class CurriculumCourseUpdate(BaseModel):
     course_id: int | None = Field(default=None, gt=0)
     course_type: CourseType | None = None
     elective_group_id: int | None = Field(default=None, gt=0)
-    ects: Decimal | None = Field(default=None, gt=0, max_digits=4, decimal_places=1)
+    ects: Decimal | None = Field(default=None, gt=0, le=30, max_digits=4, decimal_places=1)
+    requires_timetable: bool | None = None
     lecture_periods_per_week: int | None = Field(default=None, ge=0, le=32767)
     numerical_periods_per_week: int | None = Field(default=None, ge=0, le=32767)
     laboratory_periods_per_week: int | None = Field(default=None, ge=0, le=32767)
@@ -63,14 +68,21 @@ class CurriculumCourseUpdate(BaseModel):
             "numerical_periods_per_week",
             "laboratory_periods_per_week",
         }
-        if period_fields.issubset(supplied):
+        if (
+                self.requires_timetable is True
+                and period_fields.issubset(supplied)
+        ):
             total_periods = (
-                (self.lecture_periods_per_week or 0)
-                + (self.numerical_periods_per_week or 0)
-                + (self.laboratory_periods_per_week or 0)
+                    (self.lecture_periods_per_week or 0)
+                    + (self.numerical_periods_per_week or 0)
+                    + (self.laboratory_periods_per_week or 0)
             )
+
             if total_periods <= 0:
-                raise ValueError("at least one weekly teaching period is required")
+                raise ValueError(
+                    "at least one weekly teaching period is required "
+                    "when requires_timetable is true"
+                )
 
         if self.course_type == CourseType.MANDATORY and self.elective_group_id is not None:
             raise ValueError("mandatory courses cannot belong to an elective group")

@@ -55,6 +55,7 @@ class CurriculumCourse(Base):
             name="laboratory_periods_nonnegative",
         ),
         CheckConstraint(
+            "requires_timetable = false OR "
             "(lecture_periods_per_week + numerical_periods_per_week + "
             "laboratory_periods_per_week) > 0",
             name="weekly_periods_positive",
@@ -83,6 +84,12 @@ class CurriculumCourse(Base):
         nullable=True,
     )
     ects: Mapped[Decimal] = mapped_column(Numeric(4, 1), nullable=False)
+    requires_timetable: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=True,
+        server_default=true(),
+    )
     lecture_periods_per_week: Mapped[int] = mapped_column(
         SmallInteger,
         nullable=False,
