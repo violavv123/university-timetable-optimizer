@@ -3,11 +3,12 @@ from __future__ import annotations
 from datetime import date
 from typing import TYPE_CHECKING
 
+from app.database import Base
+from app.models.enums import TermType
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
     Date,
-    Enum as SqlEnum,
     ForeignKey,
     Identity,
     Integer,
@@ -15,17 +16,17 @@ from sqlalchemy import (
     UniqueConstraint,
     true,
 )
+from sqlalchemy import (
+    Enum as SqlEnum,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-from app.database import Base
-from app.models.enums import TermType
 
 if TYPE_CHECKING:
     from app.models.academic_year import AcademicYear
+    from app.models.course_offering import CourseOffering
     from app.models.room_availability import RoomAvailability
     from app.models.staff_availability import StaffAvailability
     from app.models.student_group import StudentGroup
-    from app.models.course_offering import CourseOffering
     from app.models.timetable_run import TimetableRun
 
 

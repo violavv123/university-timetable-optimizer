@@ -1,4 +1,4 @@
-from enum import Enum, IntEnum
+from enum import IntEnum, StrEnum
 
 
 class DayOfWeek(IntEnum):
@@ -11,17 +11,17 @@ class DayOfWeek(IntEnum):
     SUNDAY = 7
 
 
-class TermType(str, Enum):
+class TermType(StrEnum):
     WINTER = "WINTER"
     SUMMER = "SUMMER"
 
 
-class CourseType(str, Enum):
+class CourseType(StrEnum):
     MANDATORY = "MANDATORY"
     ELECTIVE = "ELECTIVE"
 
 
-class AcademicTitle(str, Enum):
+class AcademicTitle(StrEnum):
     FULL_PROFESSOR = "FULL_PROFESSOR"
     ASSOCIATE_PROFESSOR = "ASSOCIATE_PROFESSOR"
     ASSISTANT_PROFESSOR = "ASSISTANT_PROFESSOR"
@@ -29,86 +29,86 @@ class AcademicTitle(str, Enum):
     OTHER = "OTHER"
 
 
-class StaffType(str, Enum):
+class StaffType(StrEnum):
     INTERNAL = "INTERNAL"
     ENGAGED = "ENGAGED"
     OTHER_UP_FACULTY = "OTHER_UP_FACULTY"
     EXTERNAL = "EXTERNAL"
 
 
-class AvailabilityType(str, Enum):
+class AvailabilityType(StrEnum):
     AVAILABLE = "AVAILABLE"
     UNAVAILABLE = "UNAVAILABLE"
     PREFERRED = "PREFERRED"
     AVOID = "AVOID"
 
 
-class StudentGroupType(str, Enum):
+class StudentGroupType(StrEnum):
     COHORT = "COHORT"
     LECTURE_GROUP = "LECTURE_GROUP"
     NUMERICAL_GROUP = "NUMERICAL_GROUP"
     LAB_GROUP = "LAB_GROUP"
 
 
-class RoomType(str, Enum):
+class RoomType(StrEnum):
     GENERAL_ROOM = "GENERAL_ROOM"
     LABORATORY = "LABORATORY"
 
 
-class RoomStatus(str, Enum):
+class RoomStatus(StrEnum):
     ACTIVE = "ACTIVE"
     INACTIVE = "INACTIVE"
     MAINTENANCE = "MAINTENANCE"
 
 
-class CourseOfferingStatus(str, Enum):
+class CourseOfferingStatus(StrEnum):
     DRAFT = "DRAFT"
     READY = "READY"
     CANCELLED = "CANCELLED"
     COMPLETED = "COMPLETED"
 
 
-class ComponentType(str, Enum):
+class ComponentType(StrEnum):
     LECTURE = "LECTURE"
     NUMERICAL = "NUMERICAL"
     LABORATORY = "LABORATORY"
 
 
-class TeachingRole(str, Enum):
+class TeachingRole(StrEnum):
     LECTURER = "LECTURER"
     NUMERICAL_INSTRUCTOR = "NUMERICAL_INSTRUCTOR"
     LAB_INSTRUCTOR = "LAB_INSTRUCTOR"
 
 
-class TimeConstraintType(str, Enum):
+class TimeConstraintType(StrEnum):
     ALLOWED_WINDOW = "ALLOWED_WINDOW"
     FORBIDDEN_WINDOW = "FORBIDDEN_WINDOW"
     PREFERRED_WINDOW = "PREFERRED_WINDOW"
     FIXED_WINDOW = "FIXED_WINDOW"
 
 
-class DependencyType(str, Enum):
+class DependencyType(StrEnum):
     PRECEDES = "PRECEDES"
     SAME_DAY = "SAME_DAY"
     DIFFERENT_DAY = "DIFFERENT_DAY"
     CONSECUTIVE = "CONSECUTIVE"
 
 
-class TimetableSourceType(str, Enum):
+class TimetableSourceType(StrEnum):
     GENERATED = "GENERATED"
     MANUAL = "MANUAL"
     IMPORTED = "IMPORTED"
     REOPTIMIZED = "REOPTIMIZED"
 
 
-class SchedulingAlgorithm(str, Enum):
+class SchedulingAlgorithm(StrEnum):
     FIRST_FIT_DECREASING = "FIRST_FIT_DECREASING"
     BEST_FIT_DECREASING = "BEST_FIT_DECREASING"
     CP_SAT = "CP_SAT"
     HYBRID = "HYBRID"
 
 
-class TimetableRunStatus(str, Enum):
+class TimetableRunStatus(StrEnum):
     PENDING = "PENDING"
     RUNNING = "RUNNING"
     SUCCEEDED = "SUCCEEDED"
@@ -117,7 +117,7 @@ class TimetableRunStatus(str, Enum):
     CANCELLED = "CANCELLED"
 
 
-class AssignmentSource(str, Enum):
+class AssignmentSource(StrEnum):
     SOLVER = "SOLVER"
     MANUAL = "MANUAL"
     IMPORTED = "IMPORTED"

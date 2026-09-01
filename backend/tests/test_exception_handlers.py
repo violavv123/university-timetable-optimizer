@@ -1,10 +1,9 @@
+from app.core.exception_handlers import register_exception_handlers
+from app.core.exceptions import ResourceNotFoundError, SolverExecutionError
 from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
 from pydantic import BaseModel, Field
 from sqlalchemy.exc import IntegrityError
-
-from app.core.exception_handlers import register_exception_handlers
-from app.core.exceptions import ResourceNotFoundError, SolverExecutionError
 
 
 class RequestBody(BaseModel):

@@ -1,6 +1,11 @@
 from decimal import Decimal
 from typing import Literal, Self
 
+from app.models.enums import (
+    SchedulingAlgorithm,
+    TimetableRunStatus,
+    TimetableSourceType,
+)
 from pydantic import (
     AwareDatetime,
     BaseModel,
@@ -9,13 +14,6 @@ from pydantic import (
     JsonValue,
     model_validator,
 )
-
-from app.models.enums import (
-    SchedulingAlgorithm,
-    TimetableRunStatus,
-    TimetableSourceType,
-)
-
 
 ALGORITHM_REQUIRED_SOURCES = {
     TimetableSourceType.GENERATED,

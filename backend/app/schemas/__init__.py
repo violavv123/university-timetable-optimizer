@@ -11,6 +11,12 @@ from app.schemas.academic_year import (
     AcademicYearSetCurrent,
     AcademicYearUpdate,
 )
+from app.schemas.common import (
+    MessageResponse,
+    PaginatedResponse,
+    PaginationParams,
+    ValidationErrorDetail,
+)
 from app.schemas.course import CourseBase, CourseCreate, CourseRead, CourseUpdate
 from app.schemas.course_offering import (
     CourseOfferingBase,
@@ -143,12 +149,6 @@ from app.schemas.timetable_run import (
     TimetableRunSummary,
     TimetableRunUpdate,
 )
-from app.schemas.common import (
-    MessageResponse,
-    PaginatedResponse,
-    PaginationParams,
-    ValidationErrorDetail,
-)
 
 __all__ = [
     "AcademicTermBase",
@@ -272,4 +272,3 @@ __all__ = [
     "PaginationParams",
     "ValidationErrorDetail",
 ]
-

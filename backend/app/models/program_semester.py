@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from app.database import Base
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
@@ -14,13 +15,11 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.database import Base
-
 if TYPE_CHECKING:
     from app.models.curriculum_course import CurriculumCourse
     from app.models.elective_group import ElectiveGroup
-    from app.models.study_program import StudyProgram
     from app.models.student_group import StudentGroup
+    from app.models.study_program import StudyProgram
 
 
 class ProgramSemester(Base):

@@ -4,12 +4,17 @@ from datetime import datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any
 
+from app.database import Base
+from app.models.enums import (
+    SchedulingAlgorithm,
+    TimetableRunStatus,
+    TimetableSourceType,
+)
 from sqlalchemy import (
     BigInteger,
     Boolean,
     CheckConstraint,
     DateTime,
-    Enum as SqlEnum,
     ForeignKey,
     Identity,
     Index,
@@ -21,15 +26,11 @@ from sqlalchemy import (
     func,
     text,
 )
+from sqlalchemy import (
+    Enum as SqlEnum,
+)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-from app.database import Base
-from app.models.enums import (
-    SchedulingAlgorithm,
-    TimetableRunStatus,
-    TimetableSourceType,
-)
 
 if TYPE_CHECKING:
     from app.models.academic_term import AcademicTerm

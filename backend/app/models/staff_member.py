@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from app.database import Base
+from app.models.enums import AcademicTitle, StaffType
 from sqlalchemy import (
     Boolean,
-    Enum as SqlEnum,
     ForeignKey,
     Identity,
     Index,
@@ -13,16 +14,16 @@ from sqlalchemy import (
     UniqueConstraint,
     true,
 )
+from sqlalchemy import (
+    Enum as SqlEnum,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.database import Base
-from app.models.enums import AcademicTitle, StaffType
-
 if TYPE_CHECKING:
+    from app.models.course_session_staff import CourseSessionStaff
     from app.models.faculty import Faculty
     from app.models.staff_availability import StaffAvailability
     from app.models.staff_course import StaffCourse
-    from app.models.course_session_staff import CourseSessionStaff
 
 
 class StaffMember(Base):

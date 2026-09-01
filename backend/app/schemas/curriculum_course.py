@@ -1,9 +1,8 @@
 from decimal import Decimal
 from typing import Self
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
-
 from app.models.enums import CourseType
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class CurriculumCourseBase(BaseModel):
@@ -28,8 +27,7 @@ class CurriculumCourseBase(BaseModel):
         )
         if self.requires_timetable and total_periods <= 0:
             raise ValueError(
-                "at least one weekly teaching period is required "
-                "when requires_timetable is true"
+                "at least one weekly teaching period is required when requires_timetable is true"
             )
 
         if self.course_type == CourseType.MANDATORY and self.elective_group_id is not None:
@@ -68,14 +66,11 @@ class CurriculumCourseUpdate(BaseModel):
             "numerical_periods_per_week",
             "laboratory_periods_per_week",
         }
-        if (
-                self.requires_timetable is True
-                and period_fields.issubset(supplied)
-        ):
+        if self.requires_timetable is True and period_fields.issubset(supplied):
             total_periods = (
-                    (self.lecture_periods_per_week or 0)
-                    + (self.numerical_periods_per_week or 0)
-                    + (self.laboratory_periods_per_week or 0)
+                (self.lecture_periods_per_week or 0)
+                + (self.numerical_periods_per_week or 0)
+                + (self.laboratory_periods_per_week or 0)
             )
 
             if total_periods <= 0:

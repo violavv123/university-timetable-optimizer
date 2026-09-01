@@ -1,6 +1,3 @@
-from sqlalchemy import func, select
-from sqlalchemy.orm import Session
-
 from app.core.exceptions import ResourceInUseError
 from app.models.course import Course
 from app.models.curriculum_course import CurriculumCourse
@@ -16,6 +13,8 @@ from app.services.academic._common import (
     require_by_id,
     validated_changes,
 )
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session
 
 
 def get_course(db: Session, course_id: int) -> Course:

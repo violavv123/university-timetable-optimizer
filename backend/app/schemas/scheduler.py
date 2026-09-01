@@ -2,11 +2,9 @@ from datetime import time
 from decimal import Decimal
 from typing import Annotated, Self
 
-from pydantic import BaseModel, ConfigDict, Field, JsonValue, model_validator
-
 from app.models.enums import DayOfWeek, SchedulingAlgorithm, TimetableRunStatus
 from app.schemas.timetable_run import TimetableRunRead
-
+from pydantic import BaseModel, ConfigDict, Field, JsonValue, model_validator
 
 PositiveId = Annotated[int, Field(gt=0)]
 

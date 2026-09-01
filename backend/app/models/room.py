@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from app.database import Base
+from app.models.enums import RoomStatus, RoomType
 from sqlalchemy import (
     CheckConstraint,
-    Enum as SqlEnum,
     ForeignKey,
     Identity,
     Integer,
@@ -12,16 +13,16 @@ from sqlalchemy import (
     UniqueConstraint,
     text,
 )
+from sqlalchemy import (
+    Enum as SqlEnum,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.database import Base
-from app.models.enums import RoomStatus, RoomType
-
 if TYPE_CHECKING:
+    from app.models.course_session import CourseSession
     from app.models.faculty import Faculty
     from app.models.program_room_preference import ProgramRoomPreference
     from app.models.room_availability import RoomAvailability
-    from app.models.course_session import CourseSession
     from app.models.timetable_entry import TimetableEntry
 
 

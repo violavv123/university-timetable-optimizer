@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from app.database import Base
+from app.models.enums import StudentGroupType
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
-    Enum as SqlEnum,
     ForeignKey,
     Identity,
     Index,
@@ -14,15 +15,15 @@ from sqlalchemy import (
     UniqueConstraint,
     true,
 )
+from sqlalchemy import (
+    Enum as SqlEnum,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-from app.database import Base
-from app.models.enums import StudentGroupType
 
 if TYPE_CHECKING:
     from app.models.academic_term import AcademicTerm
-    from app.models.program_semester import ProgramSemester
     from app.models.course_session_group import CourseSessionGroup
+    from app.models.program_semester import ProgramSemester
 
 
 class StudentGroup(Base):

@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from app.database import Base
+from app.models.enums import ComponentType, RoomType
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
-    Enum as SqlEnum,
     ForeignKey,
     Identity,
     Integer,
@@ -16,11 +17,11 @@ from sqlalchemy import (
     text,
     true,
 )
+from sqlalchemy import (
+    Enum as SqlEnum,
+)
 from sqlalchemy.dialects.postgresql import ENUM as PgEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-from app.database import Base
-from app.models.enums import ComponentType, RoomType
 
 if TYPE_CHECKING:
     from app.models.course_offering import CourseOffering

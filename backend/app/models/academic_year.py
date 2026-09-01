@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import date
 from typing import TYPE_CHECKING
 
+from app.database import Base
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
@@ -16,8 +17,6 @@ from sqlalchemy import (
     text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-from app.database import Base
 
 if TYPE_CHECKING:
     from app.models.academic_term import AcademicTerm

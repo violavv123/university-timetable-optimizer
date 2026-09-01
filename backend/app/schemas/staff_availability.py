@@ -1,10 +1,8 @@
 from datetime import time
 from typing import Self
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
-
 from app.models.enums import AvailabilityType, DayOfWeek
-
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 PREFERENCE_TYPES = {AvailabilityType.PREFERRED, AvailabilityType.AVOID}
 HARD_AVAILABILITY_TYPES = {AvailabilityType.AVAILABLE, AvailabilityType.UNAVAILABLE}
@@ -29,10 +27,7 @@ class StaffAvailabilityBase(BaseModel):
         if self.availability_type in PREFERENCE_TYPES and self.preference_weight is None:
             raise ValueError("preferred and avoid windows require preference_weight")
 
-        if (
-            self.availability_type in HARD_AVAILABILITY_TYPES
-            and self.preference_weight is not None
-        ):
+        if self.availability_type in HARD_AVAILABILITY_TYPES and self.preference_weight is not None:
             raise ValueError("available and unavailable windows cannot have preference_weight")
 
         return self
@@ -62,10 +57,7 @@ class StaffAvailabilityUpdate(BaseModel):
         ):
             raise ValueError("end_time must be after start_time")
 
-        if (
-            self.availability_type in HARD_AVAILABILITY_TYPES
-            and self.preference_weight is not None
-        ):
+        if self.availability_type in HARD_AVAILABILITY_TYPES and self.preference_weight is not None:
             raise ValueError("available and unavailable windows cannot have preference_weight")
 
         if (

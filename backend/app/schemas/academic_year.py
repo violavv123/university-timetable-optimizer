@@ -3,7 +3,6 @@ from typing import Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-
 ACADEMIC_YEAR_PATTERN = r"^\d{4}/\d{4}$"
 
 

@@ -1,9 +1,4 @@
-from typing import Generic, TypeVar
-
 from pydantic import BaseModel, ConfigDict, Field, computed_field
-
-
-T = TypeVar("T")
 
 
 class MessageResponse(BaseModel):
@@ -45,7 +40,7 @@ class PaginationParams(BaseModel):
         return (self.page - 1) * self.page_size
 
 
-class PaginatedResponse(BaseModel, Generic[T]):
+class PaginatedResponse[T](BaseModel):
     """Generic response returned by paginated list endpoints."""
 
     model_config = ConfigDict(extra="forbid")
@@ -67,7 +62,7 @@ class PaginatedResponse(BaseModel, Generic[T]):
         description="Number of records requested per page.",
     )
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def total_pages(self) -> int:
         """Total number of available pages."""

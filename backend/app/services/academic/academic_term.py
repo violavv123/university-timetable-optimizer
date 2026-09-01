@@ -1,8 +1,5 @@
 from datetime import date
 
-from sqlalchemy import func, select
-from sqlalchemy.orm import Session
-
 from app.core.exceptions import BusinessRuleError, ResourceInUseError
 from app.models.academic_term import AcademicTerm
 from app.models.academic_year import AcademicYear
@@ -30,6 +27,8 @@ from app.services.academic._common import (
     require_by_id,
     validated_changes,
 )
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session
 
 
 def _validate_term_dates(
@@ -68,10 +67,7 @@ def _validate_term_order_and_overlap(
         statement = statement.where(AcademicTerm.id != exclude_id)
 
     for other_term in db.scalars(statement).all():
-        overlaps = (
-            other_term.start_date <= end_date
-            and other_term.end_date >= start_date
-        )
+        overlaps = other_term.start_date <= end_date and other_term.end_date >= start_date
         if overlaps:
             raise BusinessRuleError(
                 "Academic terms in the same year cannot overlap.",
@@ -133,9 +129,7 @@ def _ensure_term_structure_is_mutable(
         ),
     )
     for resource_name, identifier, condition in dependencies:
-        dependent_id = db.scalar(
-            select(identifier).where(condition).limit(1)
-        )
+        dependent_id = db.scalar(select(identifier).where(condition).limit(1))
         if dependent_id is not None:
             raise ResourceInUseError(
                 "A referenced academic term cannot be structurally changed.",
@@ -172,9 +166,7 @@ def _ensure_term_can_be_deactivated(
         select(CourseOffering.id)
         .where(
             CourseOffering.academic_term_id == academic_term_id,
-            CourseOffering.status.in_(
-                [CourseOfferingStatus.DRAFT, CourseOfferingStatus.READY]
-            ),
+            CourseOffering.status.in_([CourseOfferingStatus.DRAFT, CourseOfferingStatus.READY]),
         )
         .limit(1)
     )
@@ -191,9 +183,7 @@ def _ensure_term_can_be_deactivated(
         select(TimetableRun.id)
         .where(
             TimetableRun.academic_term_id == academic_term_id,
-            TimetableRun.status.in_(
-                [TimetableRunStatus.PENDING, TimetableRunStatus.RUNNING]
-            ),
+            TimetableRun.status.in_([TimetableRunStatus.PENDING, TimetableRunStatus.RUNNING]),
         )
         .limit(1)
     )
@@ -230,9 +220,7 @@ def list_academic_terms(
         .where(*filters)
         .order_by(AcademicTerm.start_date.desc(), AcademicTerm.id.desc())
     )
-    count_statement = (
-        select(func.count()).select_from(AcademicTerm).where(*filters)
-    )
+    count_statement = select(func.count()).select_from(AcademicTerm).where(*filters)
     rows, total = paginated_rows(db, statement, count_statement, pagination)
     return PaginatedResponse[AcademicTermRead](
         items=[AcademicTermRead.model_validate(row) for row in rows],

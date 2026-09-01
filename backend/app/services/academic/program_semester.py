@@ -1,6 +1,3 @@
-from sqlalchemy import func, select
-from sqlalchemy.orm import Session
-
 from app.core.exceptions import BusinessRuleError, ResourceInUseError
 from app.models.course_offering import CourseOffering
 from app.models.curriculum_course import CurriculumCourse
@@ -25,6 +22,8 @@ from app.services.academic._common import (
 from app.services.academic._hierarchy import (
     require_active_study_program_hierarchy,
 )
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session
 
 
 def _validate_semester_number(
@@ -66,9 +65,7 @@ def _ensure_structure_is_mutable(
             CurriculumCourse,
             CurriculumCourse.id == CourseOffering.curriculum_course_id,
         )
-        .where(
-            CurriculumCourse.program_semester_id == program_semester_id
-        )
+        .where(CurriculumCourse.program_semester_id == program_semester_id)
         .limit(1)
     )
     if course_offering_id is not None:
@@ -106,9 +103,7 @@ def _ensure_can_be_deactivated(
         ),
     )
     for resource_name, identifier, *conditions in active_dependencies:
-        dependent_id = db.scalar(
-            select(identifier).where(*conditions).limit(1)
-        )
+        dependent_id = db.scalar(select(identifier).where(*conditions).limit(1))
         if dependent_id is not None:
             raise ResourceInUseError(
                 "Program semester cannot be deactivated with active dependents.",
@@ -151,9 +146,7 @@ def list_program_semesters(
         .where(*filters)
         .order_by(ProgramSemester.study_program_id, ProgramSemester.semester_number)
     )
-    count_statement = (
-        select(func.count()).select_from(ProgramSemester).where(*filters)
-    )
+    count_statement = select(func.count()).select_from(ProgramSemester).where(*filters)
     rows, total = paginated_rows(db, statement, count_statement, pagination)
     return PaginatedResponse[ProgramSemesterRead](
         items=[ProgramSemesterRead.model_validate(row) for row in rows],

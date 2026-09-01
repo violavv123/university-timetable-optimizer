@@ -1,8 +1,5 @@
 from decimal import Decimal
 
-from sqlalchemy import func, select
-from sqlalchemy.orm import Session
-
 from app.core.exceptions import (
     BusinessRuleError,
     InvalidReferenceError,
@@ -32,6 +29,8 @@ from app.services.academic._common import (
 from app.services.academic._hierarchy import (
     require_active_program_semester_hierarchy,
 )
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session
 
 
 def _validate_curriculum_configuration(
@@ -69,14 +68,11 @@ def _validate_curriculum_configuration(
         )
 
     total_periods = (
-        lecture_periods_per_week
-        + numerical_periods_per_week
-        + laboratory_periods_per_week
+        lecture_periods_per_week + numerical_periods_per_week + laboratory_periods_per_week
     )
     if requires_timetable and total_periods <= 0:
         raise BusinessRuleError(
-            "At least one weekly teaching period is required when "
-            "requires_timetable is true.",
+            "At least one weekly teaching period is required when requires_timetable is true.",
             details={
                 "requires_timetable": requires_timetable,
                 "total_periods_per_week": total_periods,
@@ -85,15 +81,11 @@ def _validate_curriculum_configuration(
 
     if course_type == CourseType.MANDATORY:
         if elective_group_id is not None:
-            raise BusinessRuleError(
-                "Mandatory courses cannot belong to an elective group."
-            )
+            raise BusinessRuleError("Mandatory courses cannot belong to an elective group.")
         return
 
     if elective_group_id is None:
-        raise BusinessRuleError(
-            "Elective courses must belong to an elective group."
-        )
+        raise BusinessRuleError("Elective courses must belong to an elective group.")
 
     elective_group = require_by_id(
         db,
@@ -105,13 +97,10 @@ def _validate_curriculum_configuration(
         require_active(elective_group, "Elective group")
     if elective_group.program_semester_id != program_semester_id:
         raise InvalidReferenceError(
-            "The elective group and curriculum course must belong to the same "
-            "program semester.",
+            "The elective group and curriculum course must belong to the same program semester.",
             details={
                 "elective_group_id": elective_group.id,
-                "elective_group_program_semester_id": (
-                    elective_group.program_semester_id
-                ),
+                "elective_group_program_semester_id": (elective_group.program_semester_id),
                 "curriculum_program_semester_id": program_semester_id,
             },
         )
@@ -148,9 +137,7 @@ def _get_course_offering_id(
     )
     if open_only:
         statement = statement.where(
-            CourseOffering.status.in_(
-                [CourseOfferingStatus.DRAFT, CourseOfferingStatus.READY]
-            )
+            CourseOffering.status.in_([CourseOfferingStatus.DRAFT, CourseOfferingStatus.READY])
         )
     return db.scalar(statement.limit(1))
 
@@ -183,9 +170,7 @@ def list_curriculum_courses(
             program_semester_id,
             "Program semester",
         )
-        filters.append(
-            CurriculumCourse.program_semester_id == program_semester_id
-        )
+        filters.append(CurriculumCourse.program_semester_id == program_semester_id)
     if course_id is not None:
         require_by_id(db, Course, course_id, "Course")
         filters.append(CurriculumCourse.course_id == course_id)
@@ -200,9 +185,7 @@ def list_curriculum_courses(
             CurriculumCourse.course_id,
         )
     )
-    count_statement = (
-        select(func.count()).select_from(CurriculumCourse).where(*filters)
-    )
+    count_statement = select(func.count()).select_from(CurriculumCourse).where(*filters)
     rows, total = paginated_rows(db, statement, count_statement, pagination)
     return PaginatedResponse[CurriculumCourseRead](
         items=[CurriculumCourseRead.model_validate(row) for row in rows],

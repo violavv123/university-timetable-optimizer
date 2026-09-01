@@ -3,9 +3,10 @@ from __future__ import annotations
 from datetime import time
 from typing import TYPE_CHECKING
 
+from app.database import Base
+from app.models.enums import TimeConstraintType
 from sqlalchemy import (
     CheckConstraint,
-    Enum as SqlEnum,
     ForeignKey,
     Identity,
     Index,
@@ -13,10 +14,10 @@ from sqlalchemy import (
     SmallInteger,
     Time,
 )
+from sqlalchemy import (
+    Enum as SqlEnum,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-from app.database import Base
-from app.models.enums import TimeConstraintType
 
 if TYPE_CHECKING:
     from app.models.course_session import CourseSession

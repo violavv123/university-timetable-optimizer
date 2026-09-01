@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from app.database import Base
 from sqlalchemy import (
     Boolean,
     ForeignKey,
@@ -14,13 +15,11 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.database import Base
-
 if TYPE_CHECKING:
     from app.models.faculty import Faculty
     from app.models.level import Level
-    from app.models.program_semester import ProgramSemester
     from app.models.program_room_preference import ProgramRoomPreference
+    from app.models.program_semester import ProgramSemester
 
 
 class StudyProgram(Base):

@@ -1,6 +1,5 @@
-from pydantic import BaseModel, ConfigDict, Field
-
 from app.models.enums import RoomStatus, RoomType
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class RoomBase(BaseModel):

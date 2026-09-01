@@ -1,9 +1,8 @@
 from datetime import time
 from typing import Self
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
-
 from app.models.enums import DayOfWeek
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class TimeSlotBase(BaseModel):

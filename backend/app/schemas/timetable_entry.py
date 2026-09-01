@@ -1,8 +1,7 @@
 from typing import Self
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
-
 from app.models.enums import AssignmentSource
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
 
 
 class TimetableEntryBase(BaseModel):
@@ -69,14 +68,9 @@ class TimetableEntryBulkCreate(BaseModel):
 
     @model_validator(mode="after")
     def reject_duplicate_occurrences(self) -> Self:
-        keys = [
-            (entry.course_session_id, entry.occurrence_number)
-            for entry in self.entries
-        ]
+        keys = [(entry.course_session_id, entry.occurrence_number) for entry in self.entries]
         if len(keys) != len(set(keys)):
-            raise ValueError(
-                "entries cannot contain duplicate course-session occurrences"
-            )
+            raise ValueError("entries cannot contain duplicate course-session occurrences")
         return self
 
 

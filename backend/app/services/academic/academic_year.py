@@ -1,8 +1,5 @@
 from datetime import date
 
-from sqlalchemy import func, select, update
-from sqlalchemy.orm import Session
-
 from app.core.exceptions import BusinessRuleError, ResourceInUseError
 from app.models.academic_term import AcademicTerm
 from app.models.academic_year import AcademicYear
@@ -22,6 +19,8 @@ from app.services.academic._common import (
     require_by_id,
     validated_changes,
 )
+from sqlalchemy import func, select, update
+from sqlalchemy.orm import Session
 
 
 def _validate_date_range(start_date: date, end_date: date) -> None:
@@ -152,10 +151,7 @@ def update_academic_year(
         select(AcademicTerm.id)
         .where(
             AcademicTerm.academic_year_id == academic_year.id,
-            (
-                (AcademicTerm.start_date < start_date)
-                | (AcademicTerm.end_date > end_date)
-            ),
+            ((AcademicTerm.start_date < start_date) | (AcademicTerm.end_date > end_date)),
         )
         .limit(1)
     )
@@ -199,9 +195,7 @@ def delete_academic_year(
         )
 
     academic_term_id = db.scalar(
-        select(AcademicTerm.id)
-        .where(AcademicTerm.academic_year_id == academic_year.id)
-        .limit(1)
+        select(AcademicTerm.id).where(AcademicTerm.academic_year_id == academic_year.id).limit(1)
     )
     if academic_term_id is not None:
         raise ResourceInUseError(

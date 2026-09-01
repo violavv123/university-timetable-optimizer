@@ -1,6 +1,5 @@
-from pydantic import BaseModel, ConfigDict, Field
-
 from app.models.enums import TeachingRole
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class CourseSessionStaffBase(BaseModel):

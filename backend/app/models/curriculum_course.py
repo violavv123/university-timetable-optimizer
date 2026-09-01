@@ -3,10 +3,11 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
+from app.database import Base
+from app.models.enums import CourseType
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
-    Enum as SqlEnum,
     ForeignKey,
     Identity,
     Index,
@@ -17,16 +18,16 @@ from sqlalchemy import (
     text,
     true,
 )
+from sqlalchemy import (
+    Enum as SqlEnum,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-from app.database import Base
-from app.models.enums import CourseType
 
 if TYPE_CHECKING:
     from app.models.course import Course
+    from app.models.course_offering import CourseOffering
     from app.models.elective_group import ElectiveGroup
     from app.models.program_semester import ProgramSemester
-    from app.models.course_offering import CourseOffering
 
 
 class CurriculumCourse(Base):

@@ -1,17 +1,18 @@
 import logging
+from collections.abc import Awaitable, Callable, Mapping
 from http import HTTPStatus
-from typing import Any
+from typing import Any, cast
 
+from app.core.exceptions import AppError
+from app.schemas.error import ErrorResponse
 from fastapi import FastAPI, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError, ResponseValidationError
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import IntegrityError, OperationalError, SQLAlchemyError
 from starlette.exceptions import HTTPException as StarletteHTTPException
-
-from app.core.exceptions import AppError
-from app.schemas.error import ErrorResponse
-
+from starlette.responses import Response
+from starlette.types import ExceptionHandler
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +21,24 @@ POSTGRES_UNIQUE_VIOLATION = "23505"
 POSTGRES_FOREIGN_KEY_VIOLATION = "23503"
 POSTGRES_NOT_NULL_VIOLATION = "23502"
 POSTGRES_CHECK_VIOLATION = "23514"
+
+type TypedExceptionHandler[ExceptionT: Exception] = Callable[
+    [Request, ExceptionT],
+    Response | Awaitable[Response],
+]
+
+
+def _register_exception_handler[ExceptionT: Exception](
+    app: FastAPI,
+    exception_type: type[ExceptionT],
+    handler: TypedExceptionHandler[ExceptionT],
+) -> None:
+    """Register a handler while preserving its concrete exception type."""
+
+    app.add_exception_handler(
+        exception_type,
+        cast(ExceptionHandler, handler),
+    )
 
 
 def _status_phrase(status_code: int) -> str:
@@ -35,7 +54,7 @@ def _error_response(
     code: str,
     message: str,
     details: Any = None,
-    headers: dict[str, str] | None = None,
+    headers: Mapping[str, str] | None = None,
 ) -> JSONResponse:
     safe_details = jsonable_encoder(details) if details is not None else None
     payload = ErrorResponse(
@@ -168,8 +187,7 @@ async def integrity_error_handler(
             status_code=409,
             code="foreign_key_conflict",
             message=(
-                "The operation references a missing resource or a resource that "
-                "is still in use."
+                "The operation references a missing resource or a resource that is still in use."
             ),
         )
 
@@ -248,11 +266,43 @@ async def unhandled_exception_handler(
 def register_exception_handlers(app: FastAPI) -> None:
     """Register handlers once, immediately after creating the FastAPI app."""
 
-    app.add_exception_handler(AppError, app_error_handler)
-    app.add_exception_handler(RequestValidationError, request_validation_error_handler)
-    app.add_exception_handler(ResponseValidationError, response_validation_error_handler)
-    app.add_exception_handler(StarletteHTTPException, http_exception_handler)
-    app.add_exception_handler(IntegrityError, integrity_error_handler)
-    app.add_exception_handler(OperationalError, operational_error_handler)
-    app.add_exception_handler(SQLAlchemyError, sqlalchemy_error_handler)
-    app.add_exception_handler(Exception, unhandled_exception_handler)
+    _register_exception_handler(
+        app,
+        AppError,
+        app_error_handler,
+    )
+    _register_exception_handler(
+        app,
+        RequestValidationError,
+        request_validation_error_handler,
+    )
+    _register_exception_handler(
+        app,
+        ResponseValidationError,
+        response_validation_error_handler,
+    )
+    _register_exception_handler(
+        app,
+        StarletteHTTPException,
+        http_exception_handler,
+    )
+    _register_exception_handler(
+        app,
+        IntegrityError,
+        integrity_error_handler,
+    )
+    _register_exception_handler(
+        app,
+        OperationalError,
+        operational_error_handler,
+    )
+    _register_exception_handler(
+        app,
+        SQLAlchemyError,
+        sqlalchemy_error_handler,
+    )
+    _register_exception_handler(
+        app,
+        Exception,
+        unhandled_exception_handler,
+    )

@@ -1,13 +1,10 @@
-from sqlalchemy import func, select
-from sqlalchemy.orm import Session
-
 from app.core.exceptions import BusinessRuleError, ResourceInUseError
 from app.models.course_offering import CourseOffering
 from app.models.curriculum_course import CurriculumCourse
 from app.models.faculty import Faculty
 from app.models.level import Level
-from app.models.program_semester import ProgramSemester
 from app.models.program_room_preference import ProgramRoomPreference
+from app.models.program_semester import ProgramSemester
 from app.models.student_group import StudentGroup
 from app.models.study_program import StudyProgram
 from app.schemas.common import MessageResponse, PaginatedResponse, PaginationParams
@@ -26,6 +23,8 @@ from app.services.academic._common import (
     require_by_id,
     validated_changes,
 )
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session
 
 
 def _validate_parents(
@@ -144,9 +143,7 @@ def list_study_programs(
         filters.append(StudyProgram.is_active.is_(True))
 
     statement = select(StudyProgram).where(*filters).order_by(StudyProgram.id)
-    count_statement = (
-        select(func.count()).select_from(StudyProgram).where(*filters)
-    )
+    count_statement = select(func.count()).select_from(StudyProgram).where(*filters)
     rows, total = paginated_rows(db, statement, count_statement, pagination)
     return PaginatedResponse[StudyProgramRead](
         items=[StudyProgramRead.model_validate(row) for row in rows],
@@ -237,10 +234,7 @@ def update_study_program(
             },
         )
 
-    if (
-        faculty_id != study_program.faculty_id
-        or level_id != study_program.level_id
-    ):
+    if faculty_id != study_program.faculty_id or level_id != study_program.level_id:
         _ensure_structure_is_mutable(db, study_program.id)
     if changes.get("is_active") is False and study_program.is_active:
         _ensure_can_be_deactivated(db, study_program.id)

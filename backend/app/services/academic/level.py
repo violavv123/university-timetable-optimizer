@@ -1,6 +1,3 @@
-from sqlalchemy import func, select
-from sqlalchemy.orm import Session
-
 from app.core.exceptions import BusinessRuleError, ResourceInUseError
 from app.models.level import Level
 from app.models.program_semester import ProgramSemester
@@ -16,6 +13,8 @@ from app.services.academic._common import (
     require_by_id,
     validated_changes,
 )
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session
 
 
 def get_level(db: Session, level_id: int) -> Level:
@@ -106,10 +105,7 @@ def update_level(db: Session, level_id: int, payload: LevelUpdate) -> Level:
         )
         .where(StudyProgram.level_id == level.id)
     )
-    if (
-        highest_existing_semester is not None
-        and highest_existing_semester > new_semester_count
-    ):
+    if highest_existing_semester is not None and highest_existing_semester > new_semester_count:
         raise BusinessRuleError(
             "semester_count cannot be lower than an existing program semester.",
             details={

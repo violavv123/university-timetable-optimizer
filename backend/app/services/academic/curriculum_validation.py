@@ -1,9 +1,6 @@
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import select
-from sqlalchemy.orm import Session
-
 from app.core.exceptions import BusinessRuleError
 from app.models.curriculum_course import CurriculumCourse
 from app.models.elective_group import ElectiveGroup
@@ -14,7 +11,8 @@ from app.services.academic._common import require_by_id
 from app.services.academic._hierarchy import (
     require_active_study_program_hierarchy,
 )
-
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 DEFAULT_SEMESTER_ECTS = Decimal("30.0")
 
@@ -55,9 +53,7 @@ def get_curriculum_validation_report(
             .order_by(ProgramSemester.semester_number)
         ).all()
     )
-    semester_by_number = {
-        semester.semester_number: semester for semester in semesters
-    }
+    semester_by_number = {semester.semester_number: semester for semester in semesters}
 
     errors: list[dict[str, Any]] = []
     warnings: list[dict[str, Any]] = []

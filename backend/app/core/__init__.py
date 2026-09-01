@@ -27,7 +27,6 @@ from app.core.exceptions import (
     TimetablePublishError,
 )
 
-
 __all__ = [
     "AppError",
     "AuthenticationError",

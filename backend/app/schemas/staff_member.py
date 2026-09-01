@@ -1,9 +1,7 @@
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
-
 from app.models.enums import AcademicTitle, StaffType
-
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 EMAIL_PATTERN = r"^[^@\s]+@[^@\s]+\.[^@\s]+$"
 

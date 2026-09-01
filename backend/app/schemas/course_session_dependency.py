@@ -1,8 +1,7 @@
 from typing import Self
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
-
 from app.models.enums import DependencyType
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class CourseSessionDependencyBase(BaseModel):

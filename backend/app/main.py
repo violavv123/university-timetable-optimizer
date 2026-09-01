@@ -1,8 +1,7 @@
-from fastapi import FastAPI
-from app.core.exception_handlers import register_exception_handlers
-from fastapi.middleware.cors import CORSMiddleware
-
 from app.config import settings
+from app.core.exception_handlers import register_exception_handlers
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
     title=f"{settings.app_name} API",

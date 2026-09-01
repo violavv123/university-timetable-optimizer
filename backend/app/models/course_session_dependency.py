@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from app.database import Base
+from app.models.enums import DependencyType
 from sqlalchemy import (
     CheckConstraint,
-    Enum as SqlEnum,
     ForeignKey,
     Identity,
     Index,
@@ -12,10 +13,10 @@ from sqlalchemy import (
     SmallInteger,
     UniqueConstraint,
 )
+from sqlalchemy import (
+    Enum as SqlEnum,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-from app.database import Base
-from app.models.enums import DependencyType
 
 if TYPE_CHECKING:
     from app.models.course_session import CourseSession
@@ -47,8 +48,7 @@ class CourseSessionDependency(Base):
             name="max_gap_slots_nonnegative",
         ),
         CheckConstraint(
-            "min_gap_slots IS NULL OR max_gap_slots IS NULL "
-            "OR max_gap_slots >= min_gap_slots",
+            "min_gap_slots IS NULL OR max_gap_slots IS NULL OR max_gap_slots >= min_gap_slots",
             name="gap_range_valid",
         ),
     )

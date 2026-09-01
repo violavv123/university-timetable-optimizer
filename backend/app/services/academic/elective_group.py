@@ -1,6 +1,3 @@
-from sqlalchemy import func, select
-from sqlalchemy.orm import Session
-
 from app.core.exceptions import BusinessRuleError, ResourceInUseError
 from app.models.curriculum_course import CurriculumCourse
 from app.models.elective_group import ElectiveGroup
@@ -22,6 +19,8 @@ from app.services.academic._common import (
 from app.services.academic._hierarchy import (
     require_active_program_semester_hierarchy,
 )
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session
 
 
 def _require_program_semester(
@@ -70,9 +69,7 @@ def list_elective_groups(
         filters.append(ElectiveGroup.is_active.is_(True))
 
     statement = select(ElectiveGroup).where(*filters).order_by(ElectiveGroup.id)
-    count_statement = (
-        select(func.count()).select_from(ElectiveGroup).where(*filters)
-    )
+    count_statement = select(func.count()).select_from(ElectiveGroup).where(*filters)
     rows, total = paginated_rows(db, statement, count_statement, pagination)
     return PaginatedResponse[ElectiveGroupRead](
         items=[ElectiveGroupRead.model_validate(row) for row in rows],

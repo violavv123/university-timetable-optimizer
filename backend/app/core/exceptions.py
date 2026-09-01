@@ -1,6 +1,5 @@
 from typing import Any, ClassVar
 
-
 ErrorDetails = dict[str, Any] | list[Any] | None
 
 

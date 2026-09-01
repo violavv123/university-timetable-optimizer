@@ -1,10 +1,5 @@
 from collections.abc import Sequence
-from typing import Any, TypeVar
-
-from pydantic import BaseModel
-from sqlalchemy import Select, func, select
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from typing import Any
 
 from app.core.exceptions import (
     BusinessRuleError,
@@ -14,10 +9,10 @@ from app.core.exceptions import (
 )
 from app.database import Base
 from app.schemas.common import PaginationParams
-
-
-ModelT = TypeVar("ModelT", bound=Base)
-
+from pydantic import BaseModel
+from sqlalchemy import Select, func, inspect, select
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
 
 UNIQUE_CONSTRAINT_DETAILS: dict[str, tuple[str, list[str]]] = {
     "uq_faculties_code": ("Faculty", ["code"]),
@@ -58,6 +53,10 @@ def _raise_translated_integrity_error(error: IntegrityError) -> None:
     original_error = getattr(error, "orig", None)
     diagnostic = getattr(original_error, "diag", None)
     constraint_name = getattr(diagnostic, "constraint_name", None)
+
+    if not isinstance(constraint_name, str):
+        raise error
+
     duplicate_details = UNIQUE_CONSTRAINT_DETAILS.get(constraint_name)
 
     if duplicate_details is not None:
@@ -70,15 +69,17 @@ def _raise_translated_integrity_error(error: IntegrityError) -> None:
     raise error
 
 
-def require_by_id(
+def require_by_id[ModelT: Base](
     db: Session,
     model_type: type[ModelT],
     identifier: int,
     resource_name: str,
 ) -> ModelT:
     instance = db.get(model_type, identifier)
+
     if instance is None:
         raise ResourceNotFoundError(resource_name, identifier)
+
     return instance
 
 
@@ -93,7 +94,7 @@ def require_active(instance: Any, resource_name: str) -> None:
         )
 
 
-def ensure_unique(
+def ensure_unique[ModelT: Base](
     db: Session,
     model_type: type[ModelT],
     resource_name: str,
@@ -101,13 +102,18 @@ def ensure_unique(
     *conditions: Any,
     exclude_id: int | None = None,
 ) -> None:
-    identifier_column = getattr(model_type, "id")
+    mapper = inspect(model_type)
+    identifier_column = mapper.primary_key[0]
     statement = select(identifier_column).where(*conditions)
+
     if exclude_id is not None:
         statement = statement.where(identifier_column != exclude_id)
 
     if db.scalar(statement.limit(1)) is not None:
-        raise DuplicateResourceError(resource_name, fields=list(fields))
+        raise DuplicateResourceError(
+            resource_name,
+            fields=list(fields),
+        )
 
 
 def validated_changes(
@@ -148,14 +154,20 @@ def commit_transaction(db: Session) -> None:
         raise
 
 
-def commit_and_refresh(db: Session, instance: ModelT) -> ModelT:
+def commit_and_refresh[ModelT: Base](
+    db: Session,
+    instance: ModelT,
+) -> ModelT:
     commit_transaction(db)
-
     db.refresh(instance)
+
     return instance
 
 
-def commit_delete(db: Session, instance: ModelT) -> None:
+def commit_delete[ModelT: Base](
+    db: Session,
+    instance: ModelT,
+) -> None:
     db.delete(instance)
     commit_transaction(db)
 
@@ -167,13 +179,11 @@ def paginated_rows(
     pagination: PaginationParams,
 ) -> tuple[list[Any], int]:
     total = int(db.scalar(count_statement) or 0)
-    rows = list(
-        db.scalars(
-            statement.offset(pagination.offset).limit(pagination.page_size)
-        ).all()
-    )
+    rows = list(db.scalars(statement.offset(pagination.offset).limit(pagination.page_size)).all())
     return rows, total
 
 
-def model_count_statement(model_type: type[ModelT]) -> Select[Any]:
+def model_count_statement[ModelT: Base](
+    model_type: type[ModelT],
+) -> Select[Any]:
     return select(func.count()).select_from(model_type)

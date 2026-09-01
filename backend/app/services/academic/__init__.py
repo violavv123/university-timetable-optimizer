@@ -67,7 +67,6 @@ from app.services.academic.study_program import (
     update_study_program,
 )
 
-
 __all__ = [
     "create_academic_term",
     "create_academic_year",

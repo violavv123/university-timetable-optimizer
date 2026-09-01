@@ -2,23 +2,20 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from app.database import Base
 from sqlalchemy import Boolean, Integer, String, UniqueConstraint, true
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.database import Base
-
 if TYPE_CHECKING:
-    from app.models.study_program import StudyProgram
     from app.models.room import Room
-    from app.models.staff_member import StaffMember
     from app.models.scheduling_profile import SchedulingProfile
+    from app.models.staff_member import StaffMember
+    from app.models.study_program import StudyProgram
 
 
 class Faculty(Base):
     __tablename__ = "faculties"
-    __table_args__ = (
-        UniqueConstraint("code", name="uq_faculties_code"),
-    )
+    __table_args__ = (UniqueConstraint("code", name="uq_faculties_code"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     code: Mapped[str] = mapped_column(String(30), nullable=False)

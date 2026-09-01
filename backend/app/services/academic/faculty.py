@@ -1,9 +1,6 @@
-from sqlalchemy import func, select
-from sqlalchemy.orm import Session
-
 from app.core.exceptions import ResourceInUseError
-from app.models.faculty import Faculty
 from app.models.enums import RoomStatus
+from app.models.faculty import Faculty
 from app.models.room import Room
 from app.models.scheduling_profile import SchedulingProfile
 from app.models.staff_member import StaffMember
@@ -19,6 +16,8 @@ from app.services.academic._common import (
     require_by_id,
     validated_changes,
 )
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session
 
 
 def get_faculty(db: Session, faculty_id: int) -> Faculty:
