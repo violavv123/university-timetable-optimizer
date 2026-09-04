@@ -4,7 +4,7 @@ from app.models.program_semester import ProgramSemester
 from app.models.study_program import StudyProgram
 from app.schemas.common import MessageResponse, PaginatedResponse, PaginationParams
 from app.schemas.level import LevelCreate, LevelRead, LevelUpdate
-from app.services.academic._common import (
+from app.services.common import (
     apply_changes,
     commit_and_refresh,
     ensure_unique,

@@ -8,16 +8,16 @@ from app.schemas.elective_group import (
     ElectiveGroupRead,
     ElectiveGroupUpdate,
 )
-from app.services.academic._common import (
+from app.services.academic.hierarchy import (
+    require_active_program_semester_hierarchy,
+)
+from app.services.common import (
     apply_changes,
     commit_and_refresh,
     ensure_unique,
     paginated_rows,
     require_by_id,
     validated_changes,
-)
-from app.services.academic._hierarchy import (
-    require_active_program_semester_hierarchy,
 )
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session

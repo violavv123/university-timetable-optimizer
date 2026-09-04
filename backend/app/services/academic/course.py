@@ -4,7 +4,7 @@ from app.models.curriculum_course import CurriculumCourse
 from app.models.staff_course import StaffCourse
 from app.schemas.common import MessageResponse, PaginatedResponse, PaginationParams
 from app.schemas.course import CourseCreate, CourseRead, CourseUpdate
-from app.services.academic._common import (
+from app.services.common import (
     apply_changes,
     commit_and_refresh,
     ensure_unique,

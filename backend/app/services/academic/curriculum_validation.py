@@ -7,10 +7,10 @@ from app.models.elective_group import ElectiveGroup
 from app.models.enums import CourseType
 from app.models.program_semester import ProgramSemester
 from app.models.study_program import StudyProgram
-from app.services.academic._common import require_by_id
-from app.services.academic._hierarchy import (
+from app.services.academic.hierarchy import (
     require_active_study_program_hierarchy,
 )
+from app.services.common import require_by_id
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 

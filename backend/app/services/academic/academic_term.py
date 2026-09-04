@@ -19,7 +19,7 @@ from app.schemas.academic_term import (
     AcademicTermUpdate,
 )
 from app.schemas.common import MessageResponse, PaginatedResponse, PaginationParams
-from app.services.academic._common import (
+from app.services.common import (
     apply_changes,
     commit_and_refresh,
     ensure_unique,

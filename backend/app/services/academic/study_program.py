@@ -13,7 +13,7 @@ from app.schemas.study_program import (
     StudyProgramRead,
     StudyProgramUpdate,
 )
-from app.services.academic._common import (
+from app.services.common import (
     apply_changes,
     commit_and_refresh,
     ensure_unique,

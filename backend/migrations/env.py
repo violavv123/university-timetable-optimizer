@@ -1,10 +1,9 @@
+import sys
 from logging.config import fileConfig
 from pathlib import Path
-import sys
 
 from alembic import context
 from sqlalchemy import create_engine, pool
-
 
 # backend/migrations/env.py -> backend/
 BACKEND_DIR = Path(__file__).resolve().parents[1]
@@ -13,12 +12,10 @@ if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
 
-from app.config import settings  # noqa: E402
-from app.database import Base  # noqa: E402
-
 # Registers all models in Base.metadata.
 import app.models  # noqa: E402, F401
-
+from app.config import settings  # noqa: E402
+from app.database import Base  # noqa: E402
 
 config = context.config
 

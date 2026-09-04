@@ -1,6 +1,6 @@
 from app.models.program_semester import ProgramSemester
 from app.models.study_program import StudyProgram
-from app.services.academic._common import require_active
+from app.services.common import require_active
 
 
 def require_active_study_program_hierarchy(
