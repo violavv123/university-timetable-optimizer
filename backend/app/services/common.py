@@ -154,6 +154,17 @@ def commit_transaction(db: Session) -> None:
         raise
 
 
+def flush_transaction(db: Session) -> None:
+    try:
+        db.flush()
+    except IntegrityError as error:
+        db.rollback()
+        _raise_translated_integrity_error(error)
+    except Exception:
+        db.rollback()
+        raise
+
+
 def commit_and_refresh[ModelT: Base](
     db: Session,
     instance: ModelT,

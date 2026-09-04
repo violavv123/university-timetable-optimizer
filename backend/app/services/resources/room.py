@@ -79,9 +79,7 @@ def _validate_exact_room_requirements(
         .where(
             CourseSession.required_room_id == room_id,
             CourseSession.is_active.is_(True),
-            CourseOffering.status.in_(
-                [CourseOfferingStatus.DRAFT, CourseOfferingStatus.READY]
-            ),
+            CourseOffering.status.in_([CourseOfferingStatus.DRAFT, CourseOfferingStatus.READY]),
         )
     )
     for session in db.scalars(statement).all():
@@ -90,18 +88,12 @@ def _validate_exact_room_requirements(
                 "A room required by an open course session must remain active.",
                 details={"room_id": room_id, "course_session_id": session.id},
             )
-        if (
-            session.component_type == ComponentType.LABORATORY
-            and room_type != RoomType.LABORATORY
-        ):
+        if session.component_type == ComponentType.LABORATORY and room_type != RoomType.LABORATORY:
             raise BusinessRuleError(
                 "A laboratory session's required room must be a laboratory.",
                 details={"room_id": room_id, "course_session_id": session.id},
             )
-        if (
-            session.required_room_type is not None
-            and session.required_room_type != room_type
-        ):
+        if session.required_room_type is not None and session.required_room_type != room_type:
             raise BusinessRuleError(
                 "room_type does not satisfy an open session's required room type.",
                 details={
@@ -114,8 +106,7 @@ def _validate_exact_room_requirements(
         student_count = _required_student_count(db, session.id)
         if student_count > capacity:
             raise BusinessRuleError(
-                "Room capacity is smaller than the active groups assigned "
-                "to a required session.",
+                "Room capacity is smaller than the active groups assigned to a required session.",
                 details={
                     "room_id": room_id,
                     "course_session_id": session.id,
@@ -156,8 +147,7 @@ def _ensure_published_assignments_remain_valid(
         student_count = _required_student_count(db, course_session_id)
         if student_count > capacity:
             raise BusinessRuleError(
-                "Room capacity cannot be reduced below a published "
-                "assignment's group size.",
+                "Room capacity cannot be reduced below a published assignment's group size.",
                 details={
                     "room_id": room_id,
                     "course_session_id": course_session_id,

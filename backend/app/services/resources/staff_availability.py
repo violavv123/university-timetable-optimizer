@@ -78,9 +78,7 @@ def list_staff_availabilities(
             StaffAvailability.start_time,
         )
     )
-    count_statement = (
-        select(func.count()).select_from(StaffAvailability).where(*filters)
-    )
+    count_statement = select(func.count()).select_from(StaffAvailability).where(*filters)
     rows, total = paginated_rows(db, statement, count_statement, pagination)
     return PaginatedResponse[StaffAvailabilityRead](
         items=[StaffAvailabilityRead.model_validate(row) for row in rows],

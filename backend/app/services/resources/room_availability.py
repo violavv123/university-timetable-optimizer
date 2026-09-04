@@ -84,9 +84,7 @@ def list_room_availabilities(
             RoomAvailability.start_time,
         )
     )
-    count_statement = (
-        select(func.count()).select_from(RoomAvailability).where(*filters)
-    )
+    count_statement = select(func.count()).select_from(RoomAvailability).where(*filters)
     rows, total = paginated_rows(db, statement, count_statement, pagination)
     return PaginatedResponse[RoomAvailabilityRead](
         items=[RoomAvailabilityRead.model_validate(row) for row in rows],

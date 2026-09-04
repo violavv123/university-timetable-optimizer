@@ -85,9 +85,7 @@ def list_program_room_preferences(
     filters = []
     if study_program_id is not None:
         require_by_id(db, StudyProgram, study_program_id, "Study program")
-        filters.append(
-            ProgramRoomPreference.study_program_id == study_program_id
-        )
+        filters.append(ProgramRoomPreference.study_program_id == study_program_id)
     if room_id is not None:
         require_by_id(db, Room, room_id, "Room")
         filters.append(ProgramRoomPreference.room_id == room_id)
@@ -103,9 +101,7 @@ def list_program_room_preferences(
             ProgramRoomPreference.room_id,
         )
     )
-    count_statement = (
-        select(func.count()).select_from(ProgramRoomPreference).where(*filters)
-    )
+    count_statement = select(func.count()).select_from(ProgramRoomPreference).where(*filters)
     rows, total = paginated_rows(db, statement, count_statement, pagination)
     return PaginatedResponse[ProgramRoomPreferenceRead](
         items=[ProgramRoomPreferenceRead.model_validate(row) for row in rows],

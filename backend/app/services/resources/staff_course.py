@@ -75,9 +75,7 @@ def _open_assignments(
             CourseSessionStaff.staff_member_id == staff_member_id,
             CurriculumCourse.course_id == course_id,
             CourseSession.is_active.is_(True),
-            CourseOffering.status.in_(
-                [CourseOfferingStatus.DRAFT, CourseOfferingStatus.READY]
-            ),
+            CourseOffering.status.in_([CourseOfferingStatus.DRAFT, CourseOfferingStatus.READY]),
         )
     )
     return list(db.execute(statement).tuples().all())
@@ -97,9 +95,7 @@ def _ensure_assignments_remain_valid(
         staff_member_id=staff_member_id,
         course_id=course_id,
     ):
-        role_is_allowed = (
-            teaching_role == TeachingRole.LECTURER and can_lecture
-        ) or (
+        role_is_allowed = (teaching_role == TeachingRole.LECTURER and can_lecture) or (
             teaching_role
             in {
                 TeachingRole.NUMERICAL_INSTRUCTOR,
@@ -109,8 +105,7 @@ def _ensure_assignments_remain_valid(
         )
         if not final_is_active or not role_is_allowed:
             raise ResourceInUseError(
-                "The qualification change would invalidate an open "
-                "course-session assignment.",
+                "The qualification change would invalidate an open course-session assignment.",
                 details={
                     "staff_member_id": staff_member_id,
                     "course_id": course_id,
@@ -227,10 +222,7 @@ def update_staff_course(
         exclude_id=staff_course.id,
     )
 
-    if (
-        staff_member_id != staff_course.staff_member_id
-        or course_id != staff_course.course_id
-    ):
+    if staff_member_id != staff_course.staff_member_id or course_id != staff_course.course_id:
         assignments = _open_assignments(
             db,
             staff_member_id=staff_course.staff_member_id,
@@ -273,6 +265,4 @@ def delete_staff_course(
     )
     staff_course.is_active = False
     commit_and_refresh(db, staff_course)
-    return MessageResponse(
-        message="Staff-course qualification deactivated successfully."
-    )
+    return MessageResponse(message="Staff-course qualification deactivated successfully.")

@@ -57,9 +57,7 @@ def _validate_semester_term(
     academic_term: AcademicTerm,
 ) -> None:
     expected_term_type = (
-        TermType.WINTER
-        if program_semester.semester_number % 2 == 1
-        else TermType.SUMMER
+        TermType.WINTER if program_semester.semester_number % 2 == 1 else TermType.SUMMER
     )
     if academic_term.term_type != expected_term_type:
         raise InvalidReferenceError(
@@ -125,9 +123,7 @@ def _validate_parent(
             raise BusinessRuleError("A cohort cannot have a parent group.")
         return
     if parent_group_id is None:
-        raise BusinessRuleError(
-            "Lecture, numerical, and laboratory groups require a parent group."
-        )
+        raise BusinessRuleError("Lecture, numerical, and laboratory groups require a parent group.")
 
     parent = require_by_id(
         db,
@@ -299,9 +295,7 @@ def _attached_open_session_id(db: Session, student_group_id: int) -> int | None:
         .where(
             CourseSessionGroup.student_group_id == student_group_id,
             CourseSession.is_active.is_(True),
-            CourseOffering.status.in_(
-                [CourseOfferingStatus.DRAFT, CourseOfferingStatus.READY]
-            ),
+            CourseOffering.status.in_([CourseOfferingStatus.DRAFT, CourseOfferingStatus.READY]),
         )
         .limit(1)
     )
@@ -332,9 +326,7 @@ def _validate_assigned_room_capacity(
             CourseSessionGroup.student_group_id == group_id,
             CourseSession.required_room_id.is_not(None),
             CourseSession.is_active.is_(True),
-            CourseOffering.status.in_(
-                [CourseOfferingStatus.DRAFT, CourseOfferingStatus.READY]
-            ),
+            CourseOffering.status.in_([CourseOfferingStatus.DRAFT, CourseOfferingStatus.READY]),
         )
     )
     assignments.update(
@@ -350,8 +342,7 @@ def _validate_assigned_room_capacity(
         )
         .join(
             CourseSessionGroup,
-            CourseSessionGroup.course_session_id
-            == TimetableEntry.course_session_id,
+            CourseSessionGroup.course_session_id == TimetableEntry.course_session_id,
         )
         .where(
             CourseSessionGroup.student_group_id == group_id,
@@ -567,8 +558,7 @@ def update_student_group(
     }
     if attached_session_id is not None and structural_fields.intersection(changes):
         raise ResourceInUseError(
-            "A group attached to an open session cannot change semester, "
-            "term, or type.",
+            "A group attached to an open session cannot change semester, term, or type.",
             details={
                 "student_group_id": student_group.id,
                 "course_session_id": attached_session_id,

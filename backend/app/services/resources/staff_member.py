@@ -63,8 +63,7 @@ def _ensure_can_be_deactivated(db: Session, staff_member_id: int) -> None:
     )
     if active_qualification_id is not None:
         raise ResourceInUseError(
-            "Staff member cannot be deactivated while teaching "
-            "qualifications are active.",
+            "Staff member cannot be deactivated while teaching qualifications are active.",
             details={
                 "staff_member_id": staff_member_id,
                 "staff_course_id": active_qualification_id,
@@ -84,16 +83,13 @@ def _ensure_can_be_deactivated(db: Session, staff_member_id: int) -> None:
         .where(
             CourseSessionStaff.staff_member_id == staff_member_id,
             CourseSession.is_active.is_(True),
-            CourseOffering.status.in_(
-                [CourseOfferingStatus.DRAFT, CourseOfferingStatus.READY]
-            ),
+            CourseOffering.status.in_([CourseOfferingStatus.DRAFT, CourseOfferingStatus.READY]),
         )
         .limit(1)
     )
     if active_assignment_id is not None:
         raise ResourceInUseError(
-            "Staff member cannot be deactivated while assigned to an open "
-            "course session.",
+            "Staff member cannot be deactivated while assigned to an open course session.",
             details={
                 "staff_member_id": staff_member_id,
                 "course_session_id": active_assignment_id,

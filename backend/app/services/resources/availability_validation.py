@@ -16,6 +16,7 @@ def mapped_attribute(
         getattr(model_type, attribute_name),
     )
 
+
 def validate_availability_values(
     *,
     day_of_week: int,
@@ -25,41 +26,26 @@ def validate_availability_values(
     preference_weight: int | None,
 ) -> None:
     if not 1 <= int(day_of_week) <= 7:
-        raise BusinessRuleError(
-            "day_of_week must be between 1 and 7."
-        )
+        raise BusinessRuleError("day_of_week must be between 1 and 7.")
 
     if end_time <= start_time:
-        raise BusinessRuleError(
-            "end_time must be after start_time."
-        )
+        raise BusinessRuleError("end_time must be after start_time.")
 
     weighted_types = {
         AvailabilityType.PREFERRED,
         AvailabilityType.AVOID,
     }
 
-    if (
-        availability_type in weighted_types
-        and preference_weight is None
-    ):
-        raise BusinessRuleError(
-            "PREFERRED and AVOID windows require preference_weight."
-        )
+    if availability_type in weighted_types and preference_weight is None:
+        raise BusinessRuleError("PREFERRED and AVOID windows require preference_weight.")
 
-    if (
-        availability_type not in weighted_types
-        and preference_weight is not None
-    ):
+    if availability_type not in weighted_types and preference_weight is not None:
         raise BusinessRuleError(
-            "AVAILABLE and UNAVAILABLE windows must not have "
-            "preference_weight."
+            "AVAILABLE and UNAVAILABLE windows must not have preference_weight."
         )
 
     if preference_weight is not None and preference_weight < 0:
-        raise BusinessRuleError(
-            "preference_weight cannot be negative."
-        )
+        raise BusinessRuleError("preference_weight cannot be negative.")
 
 
 def ensure_no_overlapping_window(
@@ -94,16 +80,13 @@ def ensure_no_overlapping_window(
     )
 
     if exclude_id is not None:
-        statement = statement.where(
-            identifier_column != exclude_id
-        )
+        statement = statement.where(identifier_column != exclude_id)
 
     overlapping_id = db.scalar(statement.limit(1))
 
     if overlapping_id is not None:
         raise BusinessRuleError(
-            f"{resource_name} windows cannot overlap for the "
-            "same term and day.",
+            f"{resource_name} windows cannot overlap for the same term and day.",
             details={
                 owner_field: owner_id,
                 "academic_term_id": academic_term_id,
