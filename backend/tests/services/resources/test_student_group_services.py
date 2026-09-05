@@ -112,7 +112,7 @@ def test_child_and_same_type_sibling_counts_cannot_exceed_parent(
         student_count=20,
         parent_group=cohort,
     )
-    with pytest.raises(BusinessRuleError, match="siblings"):
+    with pytest.raises(BusinessRuleError, match="sibling"):
         make_student_group(
             db,
             context,

@@ -209,6 +209,17 @@ def _validate_constraint(
         raise BusinessRuleError("end_time must be after start_time.")
     if constraint_type == TimeConstraintType.FIXED_WINDOW and day_of_week is None:
         raise BusinessRuleError("FIXED_WINDOW requires a specific day_of_week.")
+
+    if constraint_type == TimeConstraintType.FIXED_WINDOW and session.weekly_frequency != 1:
+        raise BusinessRuleError(
+            "FIXED_WINDOW requires weekly_frequency=1 because the current "
+            "constraint schema cannot identify a particular occurrence.",
+            details={
+                "course_session_id": session.id,
+                "weekly_frequency": session.weekly_frequency,
+            },
+        )
+
     _validate_weight(constraint_type, preference_weight)
 
     program_semester = session.course_offering.curriculum_course.program_semester
