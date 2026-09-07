@@ -1,8 +1,5 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
-from fastapi.security import OAuth2PasswordRequestForm
-
 from app.core.exceptions import AuthenticationError
 from app.core.security import (
     authenticate_admin,
@@ -10,6 +7,8 @@ from app.core.security import (
     require_admin,
 )
 from app.schemas.auth import AccessTokenResponse, CurrentUserRead
+from fastapi import APIRouter, Depends
+from fastapi.security import OAuth2PasswordRequestForm
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 

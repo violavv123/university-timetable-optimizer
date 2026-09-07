@@ -1,16 +1,15 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from secrets import compare_digest
 from typing import Annotated
 
 import jwt
+from app.config import settings
+from app.core.exceptions import AuthenticationError
+from app.schemas.auth import CurrentUserRead
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from jwt.exceptions import InvalidTokenError
 from pwdlib import PasswordHash
-
-from app.config import settings
-from app.core.exceptions import AuthenticationError
-from app.schemas.auth import CurrentUserRead
 
 JWT_ALGORITHM = "HS256"
 
@@ -35,7 +34,7 @@ def authenticate_admin(username: str, password: str) -> bool:
 
 
 def create_access_token(username: str) -> str:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     expires_at = now + timedelta(
         minutes=settings.access_token_expire_minutes
     )
