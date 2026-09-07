@@ -1,5 +1,6 @@
 from app.config import settings
 from app.core.exception_handlers import register_exception_handlers
+from app.routers import api_router
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -20,6 +21,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(api_router, prefix="/api/v1")
 
 @app.get("/api/health")
 def health_check() -> dict[str, str]:
