@@ -10,24 +10,25 @@ from app.scheduling.domain import (
 )
 
 
+def occurrence_difficulty_key(
+    occurrence: SessionOccurrence,
+) -> tuple[bool, int, int, int, int, int]:
+
+    return (
+        occurrence.required_room_id is None,
+        -occurrence.demand,
+        -occurrence.duration_slots,
+        len(occurrence.allowed_start_room_pairs),
+        occurrence.session_id,
+        occurrence.occurrence_number,
+    )
+
+
 def decreasing_occurrence_order(
     occurrences: Iterable[SessionOccurrence],
 ) -> tuple[SessionOccurrence, ...]:
-    """Largest and hardest placements are considered first."""
 
-    return tuple(
-        sorted(
-            occurrences,
-            key=lambda occurrence: (
-                occurrence.required_room_id is None,
-                -occurrence.demand,
-                -occurrence.duration_slots,
-                len(occurrence.allowed_start_room_pairs),
-                occurrence.session_id,
-                occurrence.occurrence_number,
-            ),
-        )
-    )
+    return tuple(sorted(occurrences, key=occurrence_difficulty_key))
 
 
 def ordered_rooms(
@@ -52,10 +53,12 @@ def ordered_rooms(
                 ),
             )
         )
+    # First fit scans a stable room order and selects the first feasible room.
+    # The occurrences, rather than the rooms, are sorted decreasingly.
     return tuple(
         sorted(
             feasible,
-            key=lambda room: (-room.capacity, room.code),
+            key=lambda room: (room.code, room.id),
         )
     )
 
@@ -80,5 +83,6 @@ __all__ = [
     "best_fit_decreasing",
     "decreasing_occurrence_order",
     "first_fit_decreasing",
+    "occurrence_difficulty_key",
     "ordered_rooms",
 ]

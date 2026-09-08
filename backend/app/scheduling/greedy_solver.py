@@ -9,6 +9,8 @@ from app.models.enums import (
     DependencyType,
     TimetableRunStatus,
 )
+from app.models.timetable_run import TimetableRun
+from app.scheduling.dependency_rules import dependency_satisfied
 from app.scheduling.domain import (
     RoomStrategy,
     SchedulingInput,
@@ -22,7 +24,11 @@ from app.scheduling.input_loader import load_scheduling_input
 from app.scheduling.input_validator import require_valid_scheduling_input
 from app.scheduling.metrics import calculate_metrics
 from app.scheduling.result_validator import require_valid_solver_result
-from app.scheduling.room_heuristics import ordered_rooms
+from app.scheduling.room_heuristics import (
+    decreasing_occurrence_order,
+    occurrence_difficulty_key,
+    ordered_rooms,
+)
 from app.services.timetable.types import SolverOutcome, TimetableAssignment
 from sqlalchemy.orm import Session
 
@@ -56,30 +62,29 @@ def _session_order(data: SchedulingInput) -> tuple[int, ...]:
             graph[predecessor].add(successor)
             indegree[successor] += 1
 
-    difficulty: dict[int, tuple[int, int, int]] = {}
+    first_by_session: dict[int, SessionOccurrence] = {}
     for session_id in session_ids:
         occurrences = [
             occurrence for occurrence in data.occurrences if occurrence.session_id == session_id
         ]
-        first = occurrences[0]
-        difficulty[session_id] = (
-            len(first.allowed_start_room_pairs),
-            -first.demand,
-            session_id,
-        )
+        first_by_session[session_id] = decreasing_occurrence_order(occurrences)[0]
+
+    def difficulty(session_id: int) -> tuple[bool, int, int, int, int, int]:
+        return occurrence_difficulty_key(first_by_session[session_id])
+
     ready = sorted(
         (session_id for session_id, degree in indegree.items() if degree == 0),
-        key=difficulty.__getitem__,
+        key=difficulty,
     )
     result: list[int] = []
     while ready:
         session_id = ready.pop(0)
         result.append(session_id)
-        for successor in sorted(graph[session_id], key=difficulty.__getitem__):
+        for successor in sorted(graph[session_id], key=difficulty):
             indegree[successor] -= 1
             if indegree[successor] == 0:
                 ready.append(successor)
-                ready.sort(key=difficulty.__getitem__)
+                ready.sort(key=difficulty)
     return tuple(result)
 
 
@@ -91,66 +96,30 @@ def _dependency_ok(
     placed: dict[tuple[int, int], tuple[SolverAssignment, StartCandidate]],
 ) -> bool:
     predecessors = tuple(
-        value for key, value in placed.items() if key[0] == dependency.predecessor_session_id
+        start
+        for key, (_, start) in placed.items()
+        if key[0] == dependency.predecessor_session_id
     )
     successors = tuple(
-        value for key, value in placed.items() if key[0] == dependency.successor_session_id
+        start
+        for key, (_, start) in placed.items()
+        if key[0] == dependency.successor_session_id
     )
     if candidate_session_id == dependency.successor_session_id:
-        if dependency.dependency_type == DependencyType.DIFFERENT_DAY:
-            return all(
-                start.day_of_week != candidate_start.day_of_week for _, start in predecessors
-            )
+        # A symmetric relationship may be encountered before its predecessor.
+        # Defer the check; it will be enforced when the predecessor is placed
+        # and again by the independent result validator.
         if not predecessors:
-            return False
-        if dependency.dependency_type == DependencyType.SAME_DAY:
-            return any(
-                start.day_of_week == candidate_start.day_of_week for _, start in predecessors
-            )
-        for _, start in predecessors:
-            predecessor_end = start.week_index + len(start.occupied_slot_ids)
-            if dependency.dependency_type == DependencyType.CONSECUTIVE:
-                if (
-                    start.day_of_week == candidate_start.day_of_week
-                    and predecessor_end == candidate_start.week_index
-                ):
-                    return True
-                continue
-            gap = candidate_start.week_index - predecessor_end
-            if gap < 0:
-                continue
-            if dependency.min_gap_slots is not None and gap < dependency.min_gap_slots:
-                continue
-            if dependency.max_gap_slots is not None and gap > dependency.max_gap_slots:
-                continue
             return True
-        return False
+        return dependency_satisfied(dependency, predecessors, candidate_start)
 
     if candidate_session_id != dependency.predecessor_session_id or not successors:
         return True
-    if dependency.dependency_type == DependencyType.DIFFERENT_DAY:
-        return all(start.day_of_week != candidate_start.day_of_week for _, start in successors)
-    # Locked successors can be present before a predecessor is greedily placed.
-    if dependency.dependency_type == DependencyType.SAME_DAY:
-        return any(start.day_of_week == candidate_start.day_of_week for _, start in successors)
-    candidate_end = candidate_start.week_index + len(candidate_start.occupied_slot_ids)
-    for _, successor_start in successors:
-        if dependency.dependency_type == DependencyType.CONSECUTIVE:
-            if (
-                candidate_start.day_of_week == successor_start.day_of_week
-                and candidate_end == successor_start.week_index
-            ):
-                return True
-            continue
-        gap = successor_start.week_index - candidate_end
-        if gap < 0:
-            continue
-        if dependency.min_gap_slots is not None and gap < dependency.min_gap_slots:
-            continue
-        if dependency.max_gap_slots is not None and gap > dependency.max_gap_slots:
-            continue
-        return True
-    return False
+    all_predecessors = (*predecessors, candidate_start)
+    return all(
+        dependency_satisfied(dependency, all_predecessors, successor_start)
+        for successor_start in successors
+    )
 
 
 class GreedyTimetableSolver:
@@ -259,10 +228,7 @@ class GreedyTimetableSolver:
         for occurrence in data.occurrences:
             by_session[occurrence.session_id].append(occurrence)
         for session_id in _session_order(data):
-            for occurrence in sorted(
-                by_session[session_id],
-                key=lambda item: item.occurrence_number,
-            ):
+            for occurrence in decreasing_occurrence_order(by_session[session_id]):
                 if occurrence.key in placed:
                     continue
                 assigned = False
@@ -292,7 +258,9 @@ class GreedyTimetableSolver:
                 if not assigned:
                     elapsed = int((perf_counter() - started) * 1000)
                     return SolverResult(
-                        status=TimetableRunStatus.INFEASIBLE,
+                        # A constructive heuristic cannot prove mathematical
+                        # infeasibility because it does not backtrack.
+                        status=TimetableRunStatus.FAILED,
                         execution_time_ms=elapsed,
                         diagnostics={
                             "reason": "greedy_search_exhausted",
@@ -318,8 +286,8 @@ class GreedyTimetableSolver:
             },
         )
 
-    def __call__(self, db: Session, run: object) -> SolverOutcome:
-        data = load_scheduling_input(db, run)  # type: ignore[arg-type]
+    def __call__(self, db: Session, run: TimetableRun) -> SolverOutcome:
+        data = load_scheduling_input(db, run)
         result = self.solve(data)
         persisted = tuple(
             TimetableAssignment(

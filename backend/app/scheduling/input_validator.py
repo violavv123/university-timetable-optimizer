@@ -12,11 +12,13 @@ from app.models.enums import (
     TeachingRole,
     TimeConstraintType,
 )
+from app.scheduling.dependency_rules import dependency_satisfied
 from app.scheduling.domain import (
     AvailabilityWindow,
     SchedulingInput,
     SchedulingValidationResult,
     SessionOccurrence,
+    StartCandidate,
     StudentGroupData,
     ValidationIssue,
 )
@@ -45,7 +47,11 @@ def _overlaps(first: AvailabilityWindow, second: AvailabilityWindow) -> bool:
 def _validate_parameters(data: SchedulingInput, issues: list[ValidationIssue]) -> None:
     numeric_positive = ("time_limit_seconds",)
     integer_positive = ("num_search_workers",)
-    integer_nonnegative = ("random_seed", "unused_seat_weight")
+    integer_nonnegative = (
+        "random_seed",
+        "unused_seat_weight",
+        "master_evening_weight",
+    )
     for key in numeric_positive:
         value = data.parameters.get(key)
         if value is not None and (
@@ -94,6 +100,43 @@ def _validate_parameters(data: SchedulingInput, issues: list[ValidationIssue]) -
             "INVALID_SOLVER_PARAMETER",
             "log_search_progress must be a boolean.",
             parameter="log_search_progress",
+        )
+    master_start = data.parameters.get("master_evening_start_minute", 17 * 60)
+    master_end = data.parameters.get("master_evening_end_minute", 20 * 60)
+    if (
+        isinstance(master_start, bool)
+        or not isinstance(master_start, int)
+        or not 0 <= master_start < 24 * 60
+    ):
+        _issue(
+            issues,
+            "INVALID_SOLVER_PARAMETER",
+            "master_evening_start_minute must be an integer from 0 through 1439.",
+            parameter="master_evening_start_minute",
+        )
+    if (
+        isinstance(master_end, bool)
+        or not isinstance(master_end, int)
+        or not 0 < master_end <= 24 * 60
+    ):
+        _issue(
+            issues,
+            "INVALID_SOLVER_PARAMETER",
+            "master_evening_end_minute must be an integer from 1 through 1440.",
+            parameter="master_evening_end_minute",
+        )
+    if (
+        isinstance(master_start, int)
+        and not isinstance(master_start, bool)
+        and isinstance(master_end, int)
+        and not isinstance(master_end, bool)
+        and master_start >= master_end
+    ):
+        _issue(
+            issues,
+            "INVALID_SOLVER_PARAMETER",
+            "The master evening start must be earlier than its end.",
+            parameter="master_evening_window",
         )
 
 
@@ -293,6 +336,13 @@ def _validate_occurrences(data: SchedulingInput, issues: list[ValidationIssue]) 
         first = occurrences[0]
         actual_numbers = {occurrence.occurrence_number for occurrence in occurrences}
         expected_numbers = set(range(1, first.weekly_frequency + 1))
+        if len(actual_numbers) != len(occurrences):
+            _issue(
+                issues,
+                "DUPLICATE_OCCURRENCE_NUMBER",
+                "An occurrence number may appear only once within a session.",
+                course_session_id=session_id,
+            )
         if actual_numbers != expected_numbers:
             _issue(
                 issues,
@@ -301,6 +351,34 @@ def _validate_occurrences(data: SchedulingInput, issues: list[ValidationIssue]) 
                 course_session_id=session_id,
                 expected=sorted(expected_numbers),
                 actual=sorted(actual_numbers),
+            )
+        invariant_fields = (
+            "weekly_frequency",
+            "duration_slots",
+            "duration_minutes",
+            "component_type",
+            "curriculum_periods",
+            "demand",
+            "program_semester_id",
+            "academic_term_id",
+            "direct_group_ids",
+            "student_resource_ids",
+            "staff_ids",
+            "staff_assignments",
+            "time_constraints",
+            "start_candidates",
+            "compatible_room_ids",
+            "allowed_start_room_pairs",
+        )
+        if any(
+            any(getattr(occurrence, field) != getattr(first, field) for field in invariant_fields)
+            for occurrence in occurrences[1:]
+        ):
+            _issue(
+                issues,
+                "INCONSISTENT_OCCURRENCE_DATA",
+                "Occurrences of one session must share the same scheduling data.",
+                course_session_id=session_id,
             )
         if first.weekly_frequency * first.duration_slots != first.curriculum_periods:
             _issue(
@@ -526,6 +604,7 @@ def _validate_locked_assignments(
 ) -> None:
     occurrences = data.occurrence_by_key
     seen: set[tuple[int, int]] = set()
+    resolved: dict[tuple[int, int], tuple[SessionOccurrence, StartCandidate, int]] = {}
     for locked in data.locked_assignments:
         if locked.key in seen:
             _issue(
@@ -535,6 +614,7 @@ def _validate_locked_assignments(
                 course_session_id=locked.course_session_id,
                 occurrence_number=locked.occurrence_number,
             )
+            continue
         seen.add(locked.key)
         occurrence = occurrences.get(locked.key)
         if occurrence is None:
@@ -556,6 +636,105 @@ def _validate_locked_assignments(
                 room_id=locked.room_id,
                 start_slot_id=locked.start_slot_id,
             )
+            continue
+        start = next(
+            (
+                candidate
+                for candidate in occurrence.start_candidates
+                if candidate.start_slot_id == locked.start_slot_id
+            ),
+            None,
+        )
+        if start is None:
+            _issue(
+                issues,
+                "INVALID_LOCKED_PLACEMENT",
+                "A locked entry must use one of the occurrence's feasible starts.",
+                course_session_id=locked.course_session_id,
+                occurrence_number=locked.occurrence_number,
+                start_slot_id=locked.start_slot_id,
+            )
+            continue
+        resolved[locked.key] = (occurrence, start, locked.room_id)
+
+    if data.spread_repeated_occurrences:
+        days_by_session: dict[int, list[int]] = defaultdict(list)
+        for occurrence, start, _ in resolved.values():
+            days_by_session[occurrence.session_id].append(start.day_of_week)
+        for session_id, days in days_by_session.items():
+            if len(days) != len(set(days)):
+                _issue(
+                    issues,
+                    "LOCKED_REPEATED_OCCURRENCES_SAME_DAY",
+                    "Locked repeated occurrences must use different days.",
+                    course_session_id=session_id,
+                    days=days,
+                )
+
+    room_usage: dict[tuple[int, int], list[tuple[int, int]]] = defaultdict(list)
+    staff_usage: dict[tuple[int, int], list[tuple[int, int]]] = defaultdict(list)
+    student_usage: dict[tuple[int, int], list[tuple[int, int]]] = defaultdict(list)
+    for key, (occurrence, start, room_id) in resolved.items():
+        for slot_id in start.occupied_slot_ids:
+            room_usage[(room_id, slot_id)].append(key)
+            for staff_id in occurrence.staff_ids:
+                staff_usage[(staff_id, slot_id)].append(key)
+            for resource_id in occurrence.student_resource_ids:
+                student_usage[(resource_id, slot_id)].append(key)
+
+    usage_kinds = (
+        ("ROOM", room_usage),
+        ("STAFF", staff_usage),
+        ("STUDENT_GROUP", student_usage),
+    )
+    for resource_kind, usage in usage_kinds:
+        for (resource_id, slot_id), keys in usage.items():
+            if len(keys) > 1:
+                _issue(
+                    issues,
+                    f"LOCKED_{resource_kind}_OVERLAP",
+                    "Locked entries contain an unavoidable resource overlap.",
+                    resource_id=resource_id,
+                    time_slot_id=slot_id,
+                    occurrences=sorted(keys),
+                )
+
+    occurrence_keys_by_session: dict[int, set[tuple[int, int]]] = defaultdict(set)
+    locked_keys_by_session: dict[int, set[tuple[int, int]]] = defaultdict(set)
+    for occurrence in data.occurrences:
+        occurrence_keys_by_session[occurrence.session_id].add(occurrence.key)
+    for key in resolved:
+        locked_keys_by_session[key[0]].add(key)
+    fully_locked_sessions = {
+        session_id
+        for session_id, keys in occurrence_keys_by_session.items()
+        if keys and keys == locked_keys_by_session.get(session_id, set())
+    }
+    for dependency in data.dependencies:
+        if not {
+            dependency.predecessor_session_id,
+            dependency.successor_session_id,
+        }.issubset(fully_locked_sessions):
+            continue
+        predecessor_starts = tuple(
+            start
+            for key, (_, start, _) in resolved.items()
+            if key[0] == dependency.predecessor_session_id
+        )
+        successor_starts = tuple(
+            start
+            for key, (_, start, _) in resolved.items()
+            if key[0] == dependency.successor_session_id
+        )
+        for successor_start in successor_starts:
+            if not dependency_satisfied(dependency, predecessor_starts, successor_start):
+                _issue(
+                    issues,
+                    "LOCKED_DEPENDENCY_VIOLATION",
+                    "Fully locked sessions violate a dependency and cannot be repaired.",
+                    dependency_id=dependency.id,
+                    dependency_type=dependency.dependency_type.value,
+                )
 
 
 def validate_scheduling_input(data: SchedulingInput) -> SchedulingValidationResult:

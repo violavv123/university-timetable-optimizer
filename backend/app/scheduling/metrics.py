@@ -24,6 +24,7 @@ class TimetableMetrics:
     student_gap_slots: int
     staff_gap_slots: int
     late_bsc_slots: int
+    master_outside_preferred_slots: int
     hard_conflicts: int
     soft_penalty: int
 
@@ -37,6 +38,45 @@ def _contains(window_start: int, window_end: int, start: int, end: int) -> bool:
 
 def _overlaps(window_start: int, window_end: int, start: int, end: int) -> bool:
     return window_start < end and window_end > start
+
+
+def _is_master_level(level_code: str) -> bool:
+    normalized = level_code.strip().upper().replace(".", "")
+    return normalized in {"MSC", "MASTER"} or normalized.startswith("MSC")
+
+
+def _master_outside_preferred_slots(
+    data: SchedulingInput,
+    occurrence: SessionOccurrence,
+    start: StartCandidate,
+) -> int:
+    if not _is_master_level(occurrence.level_code):
+        return 0
+    # An explicitly configured session preference is more precise and should
+    # not be charged a second time by the institutional fallback.
+    if any(
+        constraint.constraint_type == TimeConstraintType.PREFERRED_WINDOW
+        for constraint in occurrence.time_constraints
+    ):
+        return 0
+    preferred_start = data.parameters.get("master_evening_start_minute", 17 * 60)
+    preferred_end = data.parameters.get("master_evening_end_minute", 20 * 60)
+    if isinstance(preferred_start, bool) or not isinstance(preferred_start, int):
+        preferred_start = 17 * 60
+    if isinstance(preferred_end, bool) or not isinstance(preferred_end, int):
+        preferred_end = 20 * 60
+    outside_minutes = max(0, preferred_start - start.start_minute) + max(
+        0,
+        start.end_minute - preferred_end,
+    )
+    return ceil(outside_minutes / data.slot_minutes)
+
+
+def _master_evening_weight(data: SchedulingInput) -> int:
+    value = data.parameters.get("master_evening_weight", data.weights.late_hour)
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        return data.weights.late_hour
+    return value
 
 
 def _availability_penalty(
@@ -84,19 +124,24 @@ def placement_penalty(
     room: CandidateRoom,
 ) -> int:
     penalty = 0
-    for constraint in occurrence.time_constraints:
-        if constraint.constraint_type != TimeConstraintType.PREFERRED_WINDOW:
-            continue
-        if not (
-            constraint.day_of_week in {None, start.day_of_week}
-            and _contains(
-                constraint.start_minute,
-                constraint.end_minute,
-                start.start_minute,
-                start.end_minute,
-            )
-        ):
-            penalty += constraint.preference_weight
+    preferred_constraints = tuple(
+        constraint
+        for constraint in occurrence.time_constraints
+        if constraint.constraint_type == TimeConstraintType.PREFERRED_WINDOW
+    )
+    if preferred_constraints and not any(
+        constraint.day_of_week in {None, start.day_of_week}
+        and _contains(
+            constraint.start_minute,
+            constraint.end_minute,
+            start.start_minute,
+            start.end_minute,
+        )
+        for constraint in preferred_constraints
+    ):
+        penalty += max(
+            constraint.preference_weight for constraint in preferred_constraints
+        )
 
     penalty += sum(
         _availability_penalty(data.staff_availability.get(staff_id, ()), start)
@@ -122,6 +167,10 @@ def placement_penalty(
     if occurrence.level_code.upper() == "BSC" and start.end_minute > 17 * 60:
         late_minutes = start.end_minute - max(start.start_minute, 17 * 60)
         penalty += ceil(late_minutes / data.slot_minutes) * data.weights.late_hour
+    penalty += (
+        _master_outside_preferred_slots(data, occurrence, start)
+        * _master_evening_weight(data)
+    )
     return penalty
 
 
@@ -162,6 +211,7 @@ def calculate_metrics(
     rooms_used: set[int] = set()
     unused_room_seats = 0
     late_bsc_slots = 0
+    master_outside_preferred_slots = 0
     placement_total = 0
 
     for assignment in assignments:
@@ -184,6 +234,11 @@ def calculate_metrics(
         if occurrence.level_code.upper() == "BSC" and start.end_minute > 17 * 60:
             late_minutes = start.end_minute - max(start.start_minute, 17 * 60)
             late_bsc_slots += ceil(late_minutes / data.slot_minutes)
+        master_outside_preferred_slots += _master_outside_preferred_slots(
+            data,
+            occurrence,
+            start,
+        )
         placement_total += placement_penalty(data, occurrence, start, room)
         for resource_id in occurrence.student_resource_ids:
             student_occupied[resource_id].update(start.occupied_slot_ids)
@@ -205,6 +260,7 @@ def calculate_metrics(
         student_gap_slots=student_gaps,
         staff_gap_slots=staff_gaps,
         late_bsc_slots=late_bsc_slots,
+        master_outside_preferred_slots=master_outside_preferred_slots,
         hard_conflicts=hard_conflicts,
         soft_penalty=soft_penalty,
     )

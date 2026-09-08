@@ -15,6 +15,7 @@ from app.models.enums import (
     ComponentType,
     CourseOfferingStatus,
     RoomStatus,
+    RoomType,
     TeachingRole,
     TimeConstraintType,
     TimetableRunStatus,
@@ -52,6 +53,17 @@ from sqlalchemy.orm import Session, selectinload
 
 def _minute(value: time) -> int:
     return value.hour * 60 + value.minute
+
+
+def _nonnegative_int_parameter(
+    parameters: dict[str, object],
+    key: str,
+    default: int,
+) -> int:
+    value = parameters.get(key, default)
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        return default
+    return value
 
 
 def _overlaps(start: int, end: int, window_start: int, window_end: int) -> bool:
@@ -288,10 +300,15 @@ def load_scheduling_input(
     run: TimetableRun,
 ) -> SchedulingInput:
     profile = db.scalar(
-        select(SchedulingProfile).where(SchedulingProfile.id == run.scheduling_profile_id)
+        select(SchedulingProfile).where(
+            SchedulingProfile.id == run.scheduling_profile_id,
+            SchedulingProfile.is_active.is_(True),
+        )
     )
     if profile is None:
-        raise ValueError(f"Scheduling profile {run.scheduling_profile_id} does not exist.")
+        raise ValueError(
+            f"Scheduling profile {run.scheduling_profile_id} does not exist or is inactive."
+        )
 
     slot_rows = tuple(
         db.scalars(
@@ -338,7 +355,20 @@ def load_scheduling_input(
         for room in room_rows
     )
 
-    all_group_rows = tuple(db.scalars(select(StudentGroup)).all())
+    all_group_rows = tuple(
+        db.scalars(
+            select(StudentGroup)
+            .join(
+                ProgramSemester,
+                ProgramSemester.id == StudentGroup.program_semester_id,
+            )
+            .join(StudyProgram, StudyProgram.id == ProgramSemester.study_program_id)
+            .where(
+                StudentGroup.academic_term_id == run.academic_term_id,
+                StudyProgram.faculty_id == profile.faculty_id,
+            )
+        ).all()
+    )
     groups = {
         group.id: StudentGroupData(
             id=group.id,
@@ -375,7 +405,8 @@ def load_scheduling_input(
         tuple(
             db.scalars(
                 select(RoomAvailability).where(
-                    RoomAvailability.academic_term_id == run.academic_term_id
+                    RoomAvailability.academic_term_id == run.academic_term_id,
+                    RoomAvailability.room_id.in_(tuple(room.id for room in rooms)),
                 )
             ).all()
         ),
@@ -410,6 +441,11 @@ def load_scheduling_input(
                     CourseSessionStaff.staff_member
                 ),
                 selectinload(CourseSession.time_constraints),
+                selectinload(CourseSession.course_offering)
+                .selectinload(CourseOffering.curriculum_course)
+                .selectinload(CurriculumCourse.program_semester)
+                .selectinload(ProgramSemester.study_program)
+                .selectinload(StudyProgram.level),
             )
             .order_by(CourseSession.id)
         )
@@ -492,7 +528,7 @@ def load_scheduling_input(
             and (session.required_room_type is None or room.room_type == session.required_room_type)
             and (
                 session.component_type != ComponentType.LABORATORY
-                or room.room_type.value == "LABORATORY"
+                or room.room_type == RoomType.LABORATORY
             )
             and (session.required_room_id is None or room.id == session.required_room_id)
         )
@@ -586,6 +622,7 @@ def load_scheduling_input(
             .where(
                 StudyProgram.faculty_id == profile.faculty_id,
                 ProgramRoomPreference.is_active.is_(True),
+                ProgramRoomPreference.room_id.in_(tuple(room.id for room in rooms)),
             )
         ).all()
     )
@@ -639,7 +676,11 @@ def load_scheduling_input(
             student_gap=profile.student_gap_weight,
             staff_gap=profile.staff_gap_weight,
             late_hour=profile.late_hour_weight,
-            unused_seat=int(run.parameters.get("unused_seat_weight", 1)),
+            unused_seat=_nonnegative_int_parameter(
+                dict(run.parameters),
+                "unused_seat_weight",
+                1,
+            ),
         ),
         parameters=dict(run.parameters),
     )
