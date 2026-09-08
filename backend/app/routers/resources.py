@@ -1,5 +1,7 @@
 from app.models.enums import RoomStatus, RoomType
+from app.models.student_group import StudentGroup
 from app.routers.crud import register_crud_routes
+from app.routers.dependencies import DbSession
 from app.schemas.program_room_preference import (
     ProgramRoomPreferenceCreate,
     ProgramRoomPreferenceRead,
@@ -18,7 +20,12 @@ from app.schemas.staff_availability import (
 )
 from app.schemas.staff_course import StaffCourseCreate, StaffCourseRead, StaffCourseUpdate
 from app.schemas.staff_member import StaffMemberCreate, StaffMemberRead, StaffMemberUpdate
-from app.schemas.student_group import StudentGroupCreate, StudentGroupRead, StudentGroupUpdate
+from app.schemas.student_group import (
+    StudentGroupCreate,
+    StudentGroupHierarchySyncRequest,
+    StudentGroupRead,
+    StudentGroupUpdate,
+)
 from app.services.resources import (
     program_room_preference,
     room,
@@ -32,6 +39,19 @@ from fastapi import APIRouter
 from pydantic import BaseModel, ConfigDict, Field
 
 router = APIRouter(prefix="/resources", tags=["Resources"])
+
+
+@router.post(
+    "/student-group-hierarchies/synchronize",
+    response_model=list[StudentGroupRead],
+    status_code=201,
+    summary="Create or update a term-specific student-group hierarchy",
+)
+def synchronize_student_groups(
+    payload: StudentGroupHierarchySyncRequest,
+    db: DbSession,
+) -> list[StudentGroup]:
+    return list(student_group.synchronize_student_group_hierarchy(db, payload))
 
 
 class StaffMemberFilters(BaseModel):

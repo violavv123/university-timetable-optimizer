@@ -34,3 +34,15 @@ class StudentGroupRead(StudentGroupBase):
 
     id: int = Field(..., gt=0)
     is_active: bool
+
+
+class StudentGroupHierarchySyncRequest(BaseModel):
+    """Create or refresh one term-specific cohort and its standard splits."""
+
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    program_semester_id: int = Field(..., gt=0)
+    academic_term_id: int = Field(..., gt=0)
+    scheduling_profile_id: int = Field(..., gt=0)
+    cohort_name: str = Field(default="COHORT", min_length=1, max_length=60)
+    student_count: int = Field(..., gt=0)

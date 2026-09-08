@@ -1,4 +1,6 @@
 from app.main import app
+from app.routers.dependencies import get_timetable_solver
+from app.scheduling.solver_factory import DatabaseConfiguredTimetableSolver
 from fastapi.testclient import TestClient
 
 client = TestClient(app, raise_server_exceptions=False)
@@ -68,8 +70,7 @@ def test_router_rejects_invalid_request_body_before_calling_a_service() -> None:
     assert response.json()["code"] == "request_validation_error"
 
 
-def test_generation_endpoint_reports_an_unconfigured_solver() -> None:
-    response = client.post("/api/v1/timetables/runs/1/generate")
+def test_generation_endpoint_uses_configured_solver_dependency() -> None:
+    solver = get_timetable_solver()
 
-    assert response.status_code == 501
-    assert response.json()["code"] == "http_501"
+    assert isinstance(solver, DatabaseConfiguredTimetableSolver)

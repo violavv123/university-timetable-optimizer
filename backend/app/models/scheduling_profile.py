@@ -93,8 +93,8 @@ class SchedulingProfile(Base):
     max_lab_students: Mapped[int] = mapped_column(
         Integer,
         nullable=False,
-        default=40,
-        server_default=text("40"),
+        default=20,
+        server_default=text("20"),
     )
     preferred_room_weight: Mapped[int] = mapped_column(
         SmallInteger,

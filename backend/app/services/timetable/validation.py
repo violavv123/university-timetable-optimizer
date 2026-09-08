@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from datetime import time
 from typing import Any, cast
 
+from app.models.course import Course
 from app.models.course_offering import CourseOffering
 from app.models.course_session import CourseSession
 from app.models.course_session_dependency import CourseSessionDependency
@@ -38,7 +39,7 @@ from app.services.timetable.types import (
     TimetableConflict,
     TimetableValidationResult,
 )
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.orm import InstrumentedAttribute, Session
 
 
@@ -69,18 +70,32 @@ def _append_conflict(
 
 
 def _session_student_count(db: Session, course_session_id: int) -> int:
-    return int(
-        db.scalar(
-            select(func.coalesce(func.sum(StudentGroup.student_count), 0))
-            .select_from(CourseSessionGroup)
+    groups = tuple(
+        db.scalars(
+            select(StudentGroup)
             .join(
-                StudentGroup,
-                StudentGroup.id == CourseSessionGroup.student_group_id,
+                CourseSessionGroup,
+                CourseSessionGroup.student_group_id == StudentGroup.id,
             )
             .where(CourseSessionGroup.course_session_id == course_session_id)
-        )
-        or 0
+        ).all()
     )
+    selected_ids = {group.id for group in groups}
+    count = 0
+    for group in groups:
+        parent_id = group.parent_group_id
+        seen = {group.id}
+        has_selected_ancestor = False
+        while parent_id is not None and parent_id not in seen:
+            if parent_id in selected_ids:
+                has_selected_ancestor = True
+                break
+            seen.add(parent_id)
+            parent = db.get(StudentGroup, parent_id)
+            parent_id = parent.parent_group_id if parent is not None else None
+        if not has_selected_ancestor:
+            count += group.student_count
+    return count
 
 
 def _component_capacity(profile: SchedulingProfile, session: CourseSession) -> int:
@@ -219,9 +234,22 @@ def _validate_room(
             entry_id=entry_id,
             room_id=room.id,
         )
-    required_capacity = resolved.student_count
-    if required_capacity == 0:
-        required_capacity = session.max_students or session.course_offering.expected_students or 0
+    if session.max_students is not None and session.max_students < resolved.student_count:
+        _append_conflict(
+            conflicts,
+            "SESSION_MAX_STUDENTS_TOO_SMALL",
+            "max_students cannot be below calculated group attendance.",
+            entry_id=entry_id,
+            course_session_id=session.id,
+            max_students=session.max_students,
+            calculated_attendance=resolved.student_count,
+        )
+    required_capacity = (
+        session.max_students
+        or resolved.student_count
+        or session.course_offering.expected_students
+        or 0
+    )
     if required_capacity > room.capacity:
         _append_conflict(
             conflicts,
@@ -233,16 +261,15 @@ def _validate_room(
             room_capacity=room.capacity,
         )
     profile_capacity = _component_capacity(resolved.run.scheduling_profile, session)
-    session_limit = session.max_students or profile_capacity
-    allowed_capacity = min(profile_capacity, session_limit)
-    if required_capacity > allowed_capacity:
+    group_capacity = resolved.student_count or required_capacity
+    if group_capacity > profile_capacity:
         _append_conflict(
             conflicts,
             "SESSION_CAPACITY_EXCEEDED",
             "The assigned groups exceed the session or profile capacity limit.",
             entry_id=entry_id,
-            required_capacity=required_capacity,
-            allowed_capacity=allowed_capacity,
+            required_capacity=group_capacity,
+            allowed_capacity=profile_capacity,
             is_splittable=session.is_splittable,
         )
 
@@ -295,10 +322,12 @@ def _validate_session_time_constraints(
             course_session_id=resolved.session.id,
         )
     allowed = tuple(
-        item for item in applicable if item.constraint_type == TimeConstraintType.ALLOWED_WINDOW
+        item for item in constraints if item.constraint_type == TimeConstraintType.ALLOWED_WINDOW
     )
     if allowed and not any(
-        _window_contains(item.start_time, item.end_time, start, end) for item in allowed
+        item.day_of_week in {None, day}
+        and _window_contains(item.start_time, item.end_time, start, end)
+        for item in allowed
     ):
         _append_conflict(
             conflicts,
@@ -311,13 +340,13 @@ def _validate_session_time_constraints(
         item for item in constraints if item.constraint_type == TimeConstraintType.FIXED_WINDOW
     )
     if fixed and not any(
-        item.day_of_week == day and item.start_time == start and item.end_time == end
+        item.day_of_week == day and item.start_time == start and item.end_time >= end
         for item in fixed
     ):
         _append_conflict(
             conflicts,
             "FIXED_SESSION_TIME_MISMATCH",
-            "The assignment must exactly match the fixed session window.",
+            "The assignment must start at and fit inside the fixed session window.",
             entry_id=entry_id,
             course_session_id=resolved.session.id,
         )
@@ -352,18 +381,19 @@ def _validate_availability(
         model_type,
         "academic_term_id",
     )
-    day_column = _mapped_attribute(model_type, "day_of_week")
     windows = tuple(
         db.scalars(
             select(model_type).where(
                 owner_field == owner_id,
                 academic_term_column == academic_term_id,
-                day_column == day_of_week,
             )
         ).all()
     )
     unavailable = tuple(
-        item for item in windows if item.availability_type == AvailabilityType.UNAVAILABLE
+        item
+        for item in windows
+        if item.availability_type == AvailabilityType.UNAVAILABLE
+        and item.day_of_week == day_of_week
     )
     if any(
         _windows_overlap(start_time, end_time, item.start_time, item.end_time)
@@ -380,7 +410,8 @@ def _validate_availability(
         item for item in windows if item.availability_type == AvailabilityType.AVAILABLE
     )
     if available and not any(
-        _window_contains(
+        item.day_of_week == day_of_week
+        and _window_contains(
             item.start_time,
             item.end_time,
             start_time,
@@ -542,6 +573,17 @@ def _validate_session_assignments(
                 entry_id=entry_id,
                 course_session_id=session.id,
                 student_group_id=group.id,
+            )
+        selected_ids = {item.id for item in group_assignments}
+        ambiguous_ancestors = selected_ids.intersection(_group_ancestor_ids(db, group.id))
+        if ambiguous_ancestors:
+            _append_conflict(
+                conflicts,
+                "AMBIGUOUS_SESSION_GROUP_HIERARCHY",
+                "A session cannot include both a group and one of its ancestors.",
+                entry_id=entry_id,
+                course_session_id=session.id,
+                student_group_ids=sorted({group.id, *ambiguous_ancestors}),
             )
 
 
@@ -773,6 +815,7 @@ def _expected_sessions(
                 CurriculumCourse,
                 CurriculumCourse.id == CourseOffering.curriculum_course_id,
             )
+            .join(Course, Course.id == CurriculumCourse.course_id)
             .join(
                 ProgramSemester,
                 ProgramSemester.id == CurriculumCourse.program_semester_id,
@@ -785,6 +828,11 @@ def _expected_sessions(
                 CourseOffering.academic_term_id == run.academic_term_id,
                 CourseOffering.status == CourseOfferingStatus.READY,
                 CourseSession.is_active.is_(True),
+                CurriculumCourse.is_active.is_(True),
+                CurriculumCourse.requires_timetable.is_(True),
+                Course.is_active.is_(True),
+                ProgramSemester.is_active.is_(True),
+                StudyProgram.is_active.is_(True),
                 StudyProgram.faculty_id == run.scheduling_profile.faculty_id,
             )
         ).all()
@@ -868,7 +916,8 @@ def _collect_dependency_conflicts(
         predecessors = by_session.get(dependency.predecessor_session_id, [])
         successors = by_session.get(dependency.successor_session_id, [])
         for successor in successors:
-            satisfied = any(
+            predicate = all if dependency.dependency_type == DependencyType.DIFFERENT_DAY else any
+            satisfied = bool(predecessors) and predicate(
                 predecessor.start_slot_id in positions
                 and successor.start_slot_id in positions
                 and _dependency_satisfied(
@@ -933,6 +982,21 @@ def validate_timetable_run(
         entries_by_session.setdefault(entry.course_session_id, set()).add(entry.occurrence_number)
     expected_ids = {session.id for session in expected_sessions}
     for session in expected_sessions:
+        curriculum = session.course_offering.curriculum_course
+        curriculum_periods = {
+            ComponentType.LECTURE: curriculum.lecture_periods_per_week,
+            ComponentType.NUMERICAL: curriculum.numerical_periods_per_week,
+            ComponentType.LABORATORY: curriculum.laboratory_periods_per_week,
+        }[session.component_type]
+        if session.weekly_frequency * session.duration_slots != curriculum_periods:
+            _append_conflict(
+                conflicts,
+                "COURSE_WORKLOAD_MISMATCH",
+                "Frequency multiplied by duration must match curriculum periods.",
+                course_session_id=session.id,
+                scheduled_periods=session.weekly_frequency * session.duration_slots,
+                curriculum_periods=curriculum_periods,
+            )
         expected_numbers = set(range(1, session.weekly_frequency + 1))
         actual_numbers = entries_by_session.get(session.id, set())
         if actual_numbers != expected_numbers:
@@ -944,6 +1008,20 @@ def validate_timetable_run(
                 expected_occurrences=sorted(expected_numbers),
                 actual_occurrences=sorted(actual_numbers),
             )
+        if len(actual_numbers) > 1:
+            occurrence_days = [
+                entry.start_slot.day_of_week
+                for entry in entries
+                if entry.course_session_id == session.id
+            ]
+            if len(occurrence_days) != len(set(occurrence_days)):
+                _append_conflict(
+                    conflicts,
+                    "REPEATED_OCCURRENCES_SAME_DAY",
+                    "Repeated weekly occurrences must use different days.",
+                    course_session_id=session.id,
+                    days=occurrence_days,
+                )
     for unexpected_session_id in set(entries_by_session).difference(expected_ids):
         _append_conflict(
             conflicts,

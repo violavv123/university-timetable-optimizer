@@ -177,6 +177,7 @@ def _validate_component_periods(
     final_is_active: bool,
     exclude_id: int | None = None,
 ) -> None:
+    del db, exclude_id
     allowed_periods = _curriculum_periods(
         offering.curriculum_course,
         component_type,
@@ -190,28 +191,17 @@ def _validate_component_periods(
             },
         )
 
-    statement = select(
-        func.coalesce(
-            func.sum(CourseSession.weekly_frequency * CourseSession.duration_slots),
-            0,
-        )
-    ).where(
-        CourseSession.course_offering_id == offering.id,
-        CourseSession.component_type == component_type,
-        CourseSession.is_active.is_(True),
-    )
-    if exclude_id is not None:
-        statement = statement.where(CourseSession.id != exclude_id)
-    existing_periods = int(db.scalar(statement) or 0)
     requested_periods = weekly_frequency * duration_slots if final_is_active else 0
-    if existing_periods + requested_periods > allowed_periods:
+    if final_is_active and requested_periods != allowed_periods:
+        comparison = "exceed" if requested_periods > allowed_periods else "must match"
         raise BusinessRuleError(
-            "Active sessions exceed the curriculum's weekly component periods.",
+            f"An active session's weekly periods {comparison} the curriculum's "
+            "weekly component periods.",
             details={
                 "course_offering_id": offering.id,
                 "component_type": component_type,
                 "curriculum_periods": allowed_periods,
-                "requested_total_periods": existing_periods + requested_periods,
+                "requested_periods": requested_periods,
             },
         )
 

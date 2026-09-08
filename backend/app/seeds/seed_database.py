@@ -17,10 +17,9 @@ from collections.abc import Iterable, Mapping
 from typing import Any
 
 from app.database import SessionLocal
+from app.seeds import data
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-
-from app.seeds import data
 
 MODEL_NAMES = (
     "Faculty",
@@ -71,9 +70,7 @@ def _load_models() -> dict[str, type[Any]]:
                 loaded[model_name] = candidate
                 break
         else:
-            raise ImportError(
-                f"Could not find SQLAlchemy model {model_name!r} under app.models."
-            )
+            raise ImportError(f"Could not find SQLAlchemy model {model_name!r} under app.models.")
     return loaded
 
 
@@ -104,9 +101,7 @@ class Seeder:
         model = MODELS[model_name]
         seed_key = str(row["key"])
         values = {
-            key: value
-            for key, value in row.items()
-            if not key.endswith("_key") and key != "key"
+            key: value for key, value in row.items() if not key.endswith("_key") and key != "key"
         }
         for field, (parent_model, row_key_field) in (foreign_keys or {}).items():
             parent = self.ref(parent_model, row[row_key_field])
@@ -187,6 +182,7 @@ def seed_database(db: Session) -> Seeder:
             current_year is None or current_year.name == row["name"]
         )
         if requested_current and not is_current:
+            assert current_year is not None
             print(
                 f"Keeping existing current academic year {current_year.name!r}; "
                 f"seeding {row['name']!r} as non-current."
@@ -210,9 +206,7 @@ def seed_database(db: Session) -> Seeder:
         "ElectiveGroup",
         data.ELECTIVE_GROUPS,
         natural_key=("program_semester_id", "name"),
-        foreign_keys={
-            "program_semester_id": ("ProgramSemester", "program_semester_key")
-        },
+        foreign_keys={"program_semester_id": ("ProgramSemester", "program_semester_key")},
     )
     seed.seed_many(
         "CurriculumCourse",

@@ -1,10 +1,10 @@
 from datetime import time
 from typing import Any
 
-from app.models.enums import DayOfWeek, TimetableRunStatus
+from app.models.enums import DayOfWeek, TimetableRunStatus, TimetableSourceType
 from app.routers.crud import register_crud_routes
 from app.routers.dependencies import DbSession, TimetableSolverDependency
-from app.schemas.scheduler import SchedulingConflictRead
+from app.schemas.scheduler import SchedulingConflictRead, TimetableGenerationRequest
 from app.schemas.scheduler import TimetableValidationResult as TimetableValidationResponse
 from app.schemas.timetable_entry import (
     TimetableEntryCreate,
@@ -74,6 +74,31 @@ register_crud_routes(
     delete_service=timetable_entry.delete_timetable_entry,
     filters_schema=TimetableEntryFilters,
 )
+
+
+@router.post(
+    "/generate",
+    response_model=TimetableRunRead,
+    status_code=201,
+    summary="Create and solve a generated timetable run",
+)
+def create_and_generate_run(
+    payload: TimetableGenerationRequest,
+    db: DbSession,
+    solver: TimetableSolverDependency,
+) -> Any:
+    run = timetable_run.create_timetable_run(
+        db,
+        TimetableRunCreate(
+            academic_term_id=payload.academic_term_id,
+            scheduling_profile_id=payload.scheduling_profile_id,
+            name=payload.name,
+            source_type=TimetableSourceType.GENERATED,
+            algorithm=payload.algorithm,
+            parameters=payload.parameters.model_dump(),
+        ),
+    )
+    return generate_timetable(db, run.id, solver)
 
 
 def _positive_ids(details: dict[str, Any], singular: str, plural: str) -> list[int]:

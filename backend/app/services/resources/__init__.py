@@ -41,10 +41,12 @@ from app.services.resources.staff_member import (
     update_staff_member,
 )
 from app.services.resources.student_group import (
+    build_student_group_hierarchy_plan,
     create_student_group,
     delete_student_group,
     get_student_group,
     list_student_groups,
+    synchronize_student_group_hierarchy,
     update_student_group,
 )
 
@@ -56,6 +58,7 @@ __all__ = [
     "create_staff_course",
     "create_staff_member",
     "create_student_group",
+    "build_student_group_hierarchy_plan",
     "delete_program_room_preference",
     "delete_room",
     "delete_room_availability",
@@ -77,6 +80,7 @@ __all__ = [
     "list_staff_courses",
     "list_staff_members",
     "list_student_groups",
+    "synchronize_student_group_hierarchy",
     "update_program_room_preference",
     "update_room",
     "update_room_availability",

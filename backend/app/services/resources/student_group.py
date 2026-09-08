@@ -1,4 +1,6 @@
 from collections import defaultdict
+from dataclasses import dataclass
+from math import ceil
 
 from app.core.exceptions import (
     BusinessRuleError,
@@ -16,12 +18,14 @@ from app.models.enums import (
 )
 from app.models.program_semester import ProgramSemester
 from app.models.room import Room
+from app.models.scheduling_profile import SchedulingProfile
 from app.models.student_group import StudentGroup
 from app.models.timetable_entry import TimetableEntry
 from app.models.timetable_run import TimetableRun
 from app.schemas.common import MessageResponse, PaginatedResponse, PaginationParams
 from app.schemas.student_group import (
     StudentGroupCreate,
+    StudentGroupHierarchySyncRequest,
     StudentGroupRead,
     StudentGroupUpdate,
 )
@@ -37,7 +41,7 @@ from app.services.common import (
     require_by_id,
     validated_changes,
 )
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 ALLOWED_PARENT_TYPES: dict[StudentGroupType, set[StudentGroupType]] = {
@@ -50,6 +54,207 @@ ALLOWED_PARENT_TYPES: dict[StudentGroupType, set[StudentGroupType]] = {
         StudentGroupType.NUMERICAL_GROUP,
     },
 }
+
+
+@dataclass(frozen=True, slots=True)
+class StudentGroupPlanRow:
+    name: str
+    group_type: StudentGroupType
+    student_count: int
+    parent_name: str | None
+
+
+def _balanced_sizes(total: int, maximum: int) -> tuple[int, ...]:
+    group_count = ceil(total / maximum)
+    base, remainder = divmod(total, group_count)
+    return tuple(base + (index < remainder) for index in range(group_count))
+
+
+def build_student_group_hierarchy_plan(
+    *,
+    cohort_name: str,
+    student_count: int,
+    max_lecture_students: int,
+    max_numerical_students: int,
+    max_lab_students: int,
+) -> tuple[StudentGroupPlanRow, ...]:
+    rows = [
+        StudentGroupPlanRow(
+            cohort_name,
+            StudentGroupType.COHORT,
+            student_count,
+            None,
+        )
+    ]
+    for lecture_number, lecture_size in enumerate(
+        _balanced_sizes(student_count, max_lecture_students),
+        start=1,
+    ):
+        lecture_name = f"{cohort_name}-G{lecture_number}"
+        rows.append(
+            StudentGroupPlanRow(
+                lecture_name,
+                StudentGroupType.LECTURE_GROUP,
+                lecture_size,
+                cohort_name,
+            )
+        )
+        for numerical_number, numerical_size in enumerate(
+            _balanced_sizes(lecture_size, max_numerical_students),
+            start=1,
+        ):
+            numerical_name = f"{lecture_name}-N{numerical_number}"
+            rows.append(
+                StudentGroupPlanRow(
+                    numerical_name,
+                    StudentGroupType.NUMERICAL_GROUP,
+                    numerical_size,
+                    lecture_name,
+                )
+            )
+            for lab_number, lab_size in enumerate(
+                _balanced_sizes(numerical_size, max_lab_students),
+                start=1,
+            ):
+                rows.append(
+                    StudentGroupPlanRow(
+                        f"{numerical_name}-L{lab_number}",
+                        StudentGroupType.LAB_GROUP,
+                        lab_size,
+                        numerical_name,
+                    )
+                )
+    return tuple(rows)
+
+
+def synchronize_student_group_hierarchy(
+    db: Session,
+    payload: StudentGroupHierarchySyncRequest,
+) -> tuple[StudentGroup, ...]:
+    """Idempotently synchronize a standard cohort/lecture/numerical/lab tree.
+
+    Existing linked groups are never structurally rewritten. This keeps saved
+    and published timetables reproducible when enrollment changes arrive late.
+    """
+
+    cohort_name = " ".join(payload.cohort_name.split())
+    program_semester = require_by_id(
+        db,
+        ProgramSemester,
+        payload.program_semester_id,
+        "Program semester",
+    )
+    academic_term = require_by_id(
+        db,
+        AcademicTerm,
+        payload.academic_term_id,
+        "Academic term",
+    )
+    profile = require_by_id(
+        db,
+        SchedulingProfile,
+        payload.scheduling_profile_id,
+        "Scheduling profile",
+    )
+    require_active_program_semester_hierarchy(program_semester)
+    require_active(academic_term, "Academic term")
+    require_active(profile, "Scheduling profile")
+    _validate_semester_term(program_semester, academic_term)
+    if program_semester.study_program.faculty_id != profile.faculty_id:
+        raise InvalidReferenceError(
+            "The scheduling profile and program semester must belong to the same faculty.",
+            details={
+                "program_semester_id": program_semester.id,
+                "scheduling_profile_id": profile.id,
+            },
+        )
+
+    plan = build_student_group_hierarchy_plan(
+        cohort_name=cohort_name,
+        student_count=payload.student_count,
+        max_lecture_students=profile.max_lecture_students,
+        max_numerical_students=profile.max_numerical_students,
+        max_lab_students=profile.max_lab_students,
+    )
+    managed_prefix = f"{cohort_name}-G"
+    existing = tuple(
+        db.scalars(
+            select(StudentGroup).where(
+                StudentGroup.program_semester_id == program_semester.id,
+                StudentGroup.academic_term_id == academic_term.id,
+                or_(
+                    func.lower(StudentGroup.name) == cohort_name.lower(),
+                    StudentGroup.name.startswith(managed_prefix),
+                ),
+            )
+        ).all()
+    )
+    existing_by_name = {group.name.lower(): group for group in existing}
+    plan_names = {row.name.lower() for row in plan}
+    plan_by_name = {row.name.lower(): row for row in plan}
+    changed_ids: set[int] = set()
+    for group in existing:
+        row = plan_by_name.get(group.name.lower())
+        if row is None or not group.is_active:
+            changed_ids.add(group.id)
+            continue
+        expected_parent = (
+            None if row.parent_name is None else existing_by_name.get(row.parent_name.lower())
+        )
+        expected_parent_id = None if expected_parent is None else expected_parent.id
+        if (
+            row.group_type != group.group_type
+            or row.student_count != group.student_count
+            or group.parent_group_id != expected_parent_id
+        ):
+            changed_ids.add(group.id)
+    linked_changed_id = (
+        db.scalar(
+            select(CourseSessionGroup.student_group_id)
+            .where(CourseSessionGroup.student_group_id.in_(changed_ids))
+            .limit(1)
+        )
+        if changed_ids
+        else None
+    )
+    if linked_changed_id is not None:
+        raise ResourceInUseError(
+            "A linked student-group hierarchy cannot be structurally synchronized.",
+            details={"student_group_id": linked_changed_id},
+        )
+
+    resolved_by_name: dict[str, StudentGroup] = {}
+    for row in plan:
+        key = row.name.lower()
+        parent = None if row.parent_name is None else resolved_by_name[row.parent_name.lower()]
+        resolved_group = existing_by_name.get(key)
+        if resolved_group is None:
+            resolved_group = StudentGroup(
+                program_semester_id=program_semester.id,
+                academic_term_id=academic_term.id,
+                parent_group_id=None if parent is None else parent.id,
+                name=row.name,
+                group_type=row.group_type,
+                student_count=row.student_count,
+                is_active=True,
+            )
+            db.add(resolved_group)
+            db.flush()
+        else:
+            resolved_group.parent_group_id = None if parent is None else parent.id
+            resolved_group.group_type = row.group_type
+            resolved_group.student_count = row.student_count
+            resolved_group.is_active = True
+        resolved_by_name[key] = resolved_group
+
+    for group in existing:
+        if group.name.lower() not in plan_names:
+            group.is_active = False
+    db.commit()
+    result = tuple(resolved_by_name[row.name.lower()] for row in plan)
+    for group in result:
+        db.refresh(group)
+    return result
 
 
 def _validate_semester_term(

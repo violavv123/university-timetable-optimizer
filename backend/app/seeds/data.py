@@ -111,78 +111,923 @@ ACADEMIC_TERMS: list[SeedRow] = [
 # lecturer, assistant, offered in this test instance
 _COURSE_SPECS = [
     # IKS BSc, semester 4
-    ("IKS-BSC-CA", "IKS-BSC-S4", "Arkitektura e kompjuterëve", "MANDATORY", None, 6, 2, 0, 2, "qamil-kabashi", "adrian-ymeri", True),
-    ("IKS-BSC-NET", "IKS-BSC-S4", "Rrjetat kompjuterike", "MANDATORY", None, 5, 2, 0, 2, "blerim-rexha", "labeat-arbneshi", True),
-    ("IKS-BSC-SEC", "IKS-BSC-S4", "Siguria e të dhënave", "MANDATORY", None, 5, 2, 0, 2, "blerim-rexha", "blend-arifaj", True),
-    ("IKS-BSC-HCI", "IKS-BSC-S4", "Komunikimi Njeri-Kompjuter", "MANDATORY", None, 5, 2, 0, 2, "isak-shabani", "yllka-kabashi", True),
-    ("IKS-BSC-WEB", "IKS-BSC-S4", "Programimi në Ueb nga ana e Serverit", "MANDATORY", None, 5, 2, 0, 2, "dhurate-hyseni", "jeta-dobruna", True),
-    ("IKS-BSC-PM", "IKS-BSC-S4", "Menaxhimi i projekteve", "ELECTIVE", "IKS-BSC-S4-E1", 4, 2, 0, 1, "nora-sadiku-dushi", "jeta-dobruna", True),
-    ("IKS-BSC-MKT", "IKS-BSC-S4", "Marketingu për inxhinierë", "ELECTIVE", "IKS-BSC-S4-E1", 4, 2, 0, 1, "nora-sadiku-dushi", "yllka-kabashi", False),
+    (
+        "IKS-BSC-CA",
+        "IKS-BSC-S4",
+        "Arkitektura e kompjuterëve",
+        "MANDATORY",
+        None,
+        6,
+        2,
+        0,
+        2,
+        "qamil-kabashi",
+        "adrian-ymeri",
+        True,
+    ),
+    (
+        "IKS-BSC-NET",
+        "IKS-BSC-S4",
+        "Rrjetat kompjuterike",
+        "MANDATORY",
+        None,
+        5,
+        2,
+        0,
+        2,
+        "blerim-rexha",
+        "labeat-arbneshi",
+        True,
+    ),
+    (
+        "IKS-BSC-SEC",
+        "IKS-BSC-S4",
+        "Siguria e të dhënave",
+        "MANDATORY",
+        None,
+        5,
+        2,
+        0,
+        2,
+        "blerim-rexha",
+        "blend-arifaj",
+        True,
+    ),
+    (
+        "IKS-BSC-HCI",
+        "IKS-BSC-S4",
+        "Komunikimi Njeri-Kompjuter",
+        "MANDATORY",
+        None,
+        5,
+        2,
+        0,
+        2,
+        "isak-shabani",
+        "yllka-kabashi",
+        True,
+    ),
+    (
+        "IKS-BSC-WEB",
+        "IKS-BSC-S4",
+        "Programimi në Ueb nga ana e Serverit",
+        "MANDATORY",
+        None,
+        5,
+        2,
+        0,
+        2,
+        "dhurate-hyseni",
+        "jeta-dobruna",
+        True,
+    ),
+    (
+        "IKS-BSC-PM",
+        "IKS-BSC-S4",
+        "Menaxhimi i projekteve",
+        "ELECTIVE",
+        "IKS-BSC-S4-E1",
+        4,
+        2,
+        0,
+        1,
+        "nora-sadiku-dushi",
+        "jeta-dobruna",
+        True,
+    ),
+    (
+        "IKS-BSC-MKT",
+        "IKS-BSC-S4",
+        "Marketingu për inxhinierë",
+        "ELECTIVE",
+        "IKS-BSC-S4-E1",
+        4,
+        2,
+        0,
+        1,
+        "nora-sadiku-dushi",
+        "yllka-kabashi",
+        False,
+    ),
     # EAR BSc, semester 4
-    ("EAR-BSC-IOT", "EAR-BSC-S4", "Interneti i gjërave", "MANDATORY", None, 6, 2, 0, 2, "drilon-bunjaku", "mergim-hoti", True),
-    ("EAR-BSC-POWER", "EAR-BSC-S4", "Elektroenergjetika", "MANDATORY", None, 5, 2, 1, 1, "vezir-rexhepi", "arben-mashkulli", True),
-    ("EAR-BSC-EMF", "EAR-BSC-S4", "Fushat dhe valët elektromagnetike", "MANDATORY", None, 5, 2, 1, 1, "vjosa-shatri", "yllka-kabashi", True),
-    ("EAR-BSC-DSP", "EAR-BSC-S4", "Sinjalet diskrete dhe përpunimi digjital", "MANDATORY", None, 5, 2, 0, 2, "faton-maliqi", "labeat-arbneshi", True),
-    ("EAR-BSC-CA", "EAR-BSC-S4", "Arkitektura e kompjuterëve", "MANDATORY", None, 5, 2, 0, 2, "qamil-kabashi", "dhurate-hyseni", True),
-    ("EAR-BSC-PM", "EAR-BSC-S4", "Menaxhimi i projekteve", "MANDATORY", None, 4, 2, 1, 0, "nora-sadiku-dushi", "jeta-dobruna", True),
+    (
+        "EAR-BSC-IOT",
+        "EAR-BSC-S4",
+        "Interneti i gjërave",
+        "MANDATORY",
+        None,
+        6,
+        2,
+        0,
+        2,
+        "drilon-bunjaku",
+        "mergim-hoti",
+        True,
+    ),
+    (
+        "EAR-BSC-POWER",
+        "EAR-BSC-S4",
+        "Elektroenergjetika",
+        "MANDATORY",
+        None,
+        5,
+        2,
+        1,
+        1,
+        "vezir-rexhepi",
+        "arben-mashkulli",
+        True,
+    ),
+    (
+        "EAR-BSC-EMF",
+        "EAR-BSC-S4",
+        "Fushat dhe valët elektromagnetike",
+        "MANDATORY",
+        None,
+        5,
+        2,
+        1,
+        1,
+        "vjosa-shatri",
+        "yllka-kabashi",
+        True,
+    ),
+    (
+        "EAR-BSC-DSP",
+        "EAR-BSC-S4",
+        "Sinjalet diskrete dhe përpunimi digjital",
+        "MANDATORY",
+        None,
+        5,
+        2,
+        0,
+        2,
+        "faton-maliqi",
+        "labeat-arbneshi",
+        True,
+    ),
+    (
+        "EAR-BSC-CA",
+        "EAR-BSC-S4",
+        "Arkitektura e kompjuterëve",
+        "MANDATORY",
+        None,
+        5,
+        2,
+        0,
+        2,
+        "qamil-kabashi",
+        "dhurate-hyseni",
+        True,
+    ),
+    (
+        "EAR-BSC-PM",
+        "EAR-BSC-S4",
+        "Menaxhimi i projekteve",
+        "MANDATORY",
+        None,
+        4,
+        2,
+        1,
+        0,
+        "nora-sadiku-dushi",
+        "jeta-dobruna",
+        True,
+    ),
     # TIK BSc, semester 4
-    ("TIK-BSC-DC", "TIK-BSC-S4", "Komunikimet digjitale", "MANDATORY", None, 6, 3, 1, 1, "enver-hamiti", "adrian-ymeri", True),
-    ("TIK-BSC-EMW", "TIK-BSC-S4", "Valët elektromagnetike", "MANDATORY", None, 6, 2, 1, 1, "mimoza-ibrani", "yllka-kabashi", True),
-    ("TIK-BSC-DT", "TIK-BSC-S4", "Transmetimi i të dhënave", "MANDATORY", None, 5, 2, 0, 2, "bujar-krasniqi", "blend-arifaj", True),
-    ("TIK-BSC-NET", "TIK-BSC-S4", "Rrjetet komunikuese", "MANDATORY", None, 5, 2, 0, 2, "mimoza-ibrani", "mergim-hoti", True),
-    ("TIK-BSC-PR", "TIK-BSC-S4", "Praktika", "MANDATORY", None, 3, 1, 0, 0, "department-fiek", "department-fiek", True),
-    ("TIK-BSC-PM", "TIK-BSC-S4", "Menaxhimi i projekteve", "ELECTIVE", "TIK-BSC-S4-E1", 5, 2, 1, 0, "nora-sadiku-dushi", "jeta-dobruna", True),
-    ("TIK-BSC-ENG", "TIK-BSC-S4", "Komunikime profesionale në anglisht", "ELECTIVE", "TIK-BSC-S4-E1", 5, 2, 1, 0, "external-up", "external-up", False),
-    ("TIK-BSC-INNOV", "TIK-BSC-S4", "Digitalizimi dhe inovacioni për zhvillim të qëndrueshëm", "ELECTIVE", "TIK-BSC-S4-E1", 5, 2, 1, 0, "bujar-krasniqi", "adrian-ymeri", False),
-    ("TIK-BSC-ETH", "TIK-BSC-S4", "Etika në shkencë dhe inxhinieri", "ELECTIVE", "TIK-BSC-S4-E1", 5, 2, 1, 0, "department-fiek", "department-fiek", False),
+    (
+        "TIK-BSC-DC",
+        "TIK-BSC-S4",
+        "Komunikimet digjitale",
+        "MANDATORY",
+        None,
+        6,
+        3,
+        1,
+        1,
+        "enver-hamiti",
+        "adrian-ymeri",
+        True,
+    ),
+    (
+        "TIK-BSC-EMW",
+        "TIK-BSC-S4",
+        "Valët elektromagnetike",
+        "MANDATORY",
+        None,
+        6,
+        2,
+        1,
+        1,
+        "mimoza-ibrani",
+        "yllka-kabashi",
+        True,
+    ),
+    (
+        "TIK-BSC-DT",
+        "TIK-BSC-S4",
+        "Transmetimi i të dhënave",
+        "MANDATORY",
+        None,
+        5,
+        2,
+        0,
+        2,
+        "bujar-krasniqi",
+        "blend-arifaj",
+        True,
+    ),
+    (
+        "TIK-BSC-NET",
+        "TIK-BSC-S4",
+        "Rrjetet komunikuese",
+        "MANDATORY",
+        None,
+        5,
+        2,
+        0,
+        2,
+        "mimoza-ibrani",
+        "mergim-hoti",
+        True,
+    ),
+    (
+        "TIK-BSC-PR",
+        "TIK-BSC-S4",
+        "Praktika",
+        "MANDATORY",
+        None,
+        3,
+        1,
+        0,
+        0,
+        "department-fiek",
+        "department-fiek",
+        True,
+    ),
+    (
+        "TIK-BSC-PM",
+        "TIK-BSC-S4",
+        "Menaxhimi i projekteve",
+        "ELECTIVE",
+        "TIK-BSC-S4-E1",
+        5,
+        2,
+        1,
+        0,
+        "nora-sadiku-dushi",
+        "jeta-dobruna",
+        True,
+    ),
+    (
+        "TIK-BSC-ENG",
+        "TIK-BSC-S4",
+        "Komunikime profesionale në anglisht",
+        "ELECTIVE",
+        "TIK-BSC-S4-E1",
+        5,
+        2,
+        1,
+        0,
+        "external-up",
+        "external-up",
+        False,
+    ),
+    (
+        "TIK-BSC-INNOV",
+        "TIK-BSC-S4",
+        "Digitalizimi dhe inovacioni për zhvillim të qëndrueshëm",
+        "ELECTIVE",
+        "TIK-BSC-S4-E1",
+        5,
+        2,
+        1,
+        0,
+        "bujar-krasniqi",
+        "adrian-ymeri",
+        False,
+    ),
+    (
+        "TIK-BSC-ETH",
+        "TIK-BSC-S4",
+        "Etika në shkencë dhe inxhinieri",
+        "ELECTIVE",
+        "TIK-BSC-S4-E1",
+        5,
+        2,
+        1,
+        0,
+        "department-fiek",
+        "department-fiek",
+        False,
+    ),
     # EE BSc, semester 4
-    ("EE-BSC-MACH", "EE-BSC-S4", "Makinat elektrike dhe transformatorët", "MANDATORY", None, 6, 3, 2, 1, "vezir-rexhepi", "arben-mashkulli", True),
-    ("EE-BSC-ENV", "EE-BSC-S4", "Energjia dhe mjedisi", "MANDATORY", None, 5, 2, 1, 1, "arben-gjukaj", "jeta-dobruna", True),
-    ("EE-BSC-PLANTS", "EE-BSC-S4", "Centralet elektrike", "MANDATORY", None, 6, 3, 2, 0, "arben-gjukaj", "adrian-ymeri", True),
-    ("EE-BSC-EMF", "EE-BSC-S4", "Fushat dhe valët elektromagnetike", "MANDATORY", None, 5, 3, 0, 1, "mimoza-ibrani", "yllka-kabashi", True),
-    ("EE-BSC-AUDIT", "EE-BSC-S4", "Menaxhimi i energjisë dhe auditimi i efiçiencës së energjisë", "MANDATORY", None, 4, 2, 1, 0, "vezir-rexhepi", "jeta-dobruna", True),
-    ("EE-BSC-INST", "EE-BSC-S4", "Instrumentacioni matës në elektroenergjetikë", "ELECTIVE", "EE-BSC-S4-E1", 4, 2, 2, 0, "department-fiek", "adrian-ymeri", True),
-    ("EE-BSC-SAFE", "EE-BSC-S4", "Teknika e sigurimit në impiantet elektrike", "ELECTIVE", "EE-BSC-S4-E1", 4, 2, 0, 2, "arben-gjukaj", "arben-mashkulli", False),
-    ("EE-BSC-PQ", "EE-BSC-S4", "Kualiteti i fuqisë", "ELECTIVE", "EE-BSC-S4-E1", 4, 2, 0, 1, "nuri-berisha", "mergim-hoti", False),
+    (
+        "EE-BSC-MACH",
+        "EE-BSC-S4",
+        "Makinat elektrike dhe transformatorët",
+        "MANDATORY",
+        None,
+        6,
+        3,
+        2,
+        1,
+        "vezir-rexhepi",
+        "arben-mashkulli",
+        True,
+    ),
+    (
+        "EE-BSC-ENV",
+        "EE-BSC-S4",
+        "Energjia dhe mjedisi",
+        "MANDATORY",
+        None,
+        5,
+        2,
+        1,
+        1,
+        "arben-gjukaj",
+        "jeta-dobruna",
+        True,
+    ),
+    (
+        "EE-BSC-PLANTS",
+        "EE-BSC-S4",
+        "Centralet elektrike",
+        "MANDATORY",
+        None,
+        6,
+        3,
+        2,
+        0,
+        "arben-gjukaj",
+        "adrian-ymeri",
+        True,
+    ),
+    (
+        "EE-BSC-EMF",
+        "EE-BSC-S4",
+        "Fushat dhe valët elektromagnetike",
+        "MANDATORY",
+        None,
+        5,
+        3,
+        0,
+        1,
+        "mimoza-ibrani",
+        "yllka-kabashi",
+        True,
+    ),
+    (
+        "EE-BSC-AUDIT",
+        "EE-BSC-S4",
+        "Menaxhimi i energjisë dhe auditimi i efiçiencës së energjisë",
+        "MANDATORY",
+        None,
+        4,
+        2,
+        1,
+        0,
+        "vezir-rexhepi",
+        "jeta-dobruna",
+        True,
+    ),
+    (
+        "EE-BSC-INST",
+        "EE-BSC-S4",
+        "Instrumentacioni matës në elektroenergjetikë",
+        "ELECTIVE",
+        "EE-BSC-S4-E1",
+        4,
+        2,
+        2,
+        0,
+        "department-fiek",
+        "adrian-ymeri",
+        True,
+    ),
+    (
+        "EE-BSC-SAFE",
+        "EE-BSC-S4",
+        "Teknika e sigurimit në impiantet elektrike",
+        "ELECTIVE",
+        "EE-BSC-S4-E1",
+        4,
+        2,
+        0,
+        2,
+        "arben-gjukaj",
+        "arben-mashkulli",
+        False,
+    ),
+    (
+        "EE-BSC-PQ",
+        "EE-BSC-S4",
+        "Kualiteti i fuqisë",
+        "ELECTIVE",
+        "EE-BSC-S4-E1",
+        4,
+        2,
+        0,
+        1,
+        "nuri-berisha",
+        "mergim-hoti",
+        False,
+    ),
     # IKS MSc, semester 2
-    ("IKS-MSC-MLANG", "IKS-MSC-S2", "Gjuha e makinës", "MANDATORY", None, 6, 2, 0, 2, "lule-ahmedi", "mergim-hoti", True),
-    ("IKS-MSC-SOA", "IKS-MSC-S2", "Sistemet e orientuara në shërbime", "MANDATORY", None, 6, 2, 0, 2, "isak-shabani", "blend-arifaj", True),
-    ("IKS-MSC-RM", "IKS-MSC-S2", "Metodologjitë hulumtuese", "MANDATORY", None, 6, 2, 0, 2, "dhurate-hyseni", "dhurate-hyseni", True),
-    ("IKS-MSC-SW", "IKS-MSC-S2", "Uebi semantik", "ELECTIVE", "IKS-MSC-S2-E1", 6, 2, 0, 2, "lule-ahmedi", "lule-ahmedi", True),
-    ("IKS-MSC-NIA", "IKS-MSC-S2", "Algoritmet e inspiruara nga natyra", "ELECTIVE", "IKS-MSC-S2-E1", 6, 2, 0, 2, "kadri-sylejmani", "labeat-arbneshi", True),
-    ("IKS-MSC-IOT", "IKS-MSC-S2", "Interneti i gjërave", "ELECTIVE", "IKS-MSC-S2-E1", 6, 2, 0, 2, "besmir-sejdiu", "blend-arifaj", False),
+    (
+        "IKS-MSC-MLANG",
+        "IKS-MSC-S2",
+        "Gjuha e makinës",
+        "MANDATORY",
+        None,
+        6,
+        2,
+        0,
+        2,
+        "lule-ahmedi",
+        "mergim-hoti",
+        True,
+    ),
+    (
+        "IKS-MSC-SOA",
+        "IKS-MSC-S2",
+        "Sistemet e orientuara në shërbime",
+        "MANDATORY",
+        None,
+        6,
+        2,
+        0,
+        2,
+        "isak-shabani",
+        "blend-arifaj",
+        True,
+    ),
+    (
+        "IKS-MSC-RM",
+        "IKS-MSC-S2",
+        "Metodologjitë hulumtuese",
+        "MANDATORY",
+        None,
+        6,
+        2,
+        0,
+        2,
+        "dhurate-hyseni",
+        "dhurate-hyseni",
+        True,
+    ),
+    (
+        "IKS-MSC-SW",
+        "IKS-MSC-S2",
+        "Uebi semantik",
+        "ELECTIVE",
+        "IKS-MSC-S2-E1",
+        6,
+        2,
+        0,
+        2,
+        "lule-ahmedi",
+        "lule-ahmedi",
+        True,
+    ),
+    (
+        "IKS-MSC-NIA",
+        "IKS-MSC-S2",
+        "Algoritmet e inspiruara nga natyra",
+        "ELECTIVE",
+        "IKS-MSC-S2-E1",
+        6,
+        2,
+        0,
+        2,
+        "kadri-sylejmani",
+        "labeat-arbneshi",
+        True,
+    ),
+    (
+        "IKS-MSC-IOT",
+        "IKS-MSC-S2",
+        "Interneti i gjërave",
+        "ELECTIVE",
+        "IKS-MSC-S2-E1",
+        6,
+        2,
+        0,
+        2,
+        "besmir-sejdiu",
+        "blend-arifaj",
+        False,
+    ),
     # EAR MSc, semester 2
-    ("EAR-MSC-DD", "EAR-MSC-S2", "Projektimi digjital", "MANDATORY", None, 6, 2, 0, 2, "milaim-zabeli", "arben-mashkulli", True),
-    ("EAR-MSC-ES", "EAR-MSC-S2", "Sistemet e dedikuara", "MANDATORY", None, 6, 2, 0, 2, "faton-maliqi", "mergim-hoti", True),
-    ("EAR-MSC-ROB", "EAR-MSC-S2", "Robotika dhe automatizimi", "MANDATORY", None, 6, 2, 0, 2, "lavdim-kurtaj", "adrian-ymeri", True),
-    ("EAR-MSC-ID", "EAR-MSC-S2", "Identifikimi i sistemeve", "ELECTIVE", "EAR-MSC-S2-E1", 6, 2, 0, 2, "faton-maliqi", "adrian-ymeri", True),
-    ("EAR-MSC-PC", "EAR-MSC-S2", "Rregullimi i proceseve me kompjuter", "ELECTIVE", "EAR-MSC-S2-E1", 6, 2, 0, 2, "drilon-bunjaku", "mergim-hoti", False),
-    ("EAR-MSC-RTOS", "EAR-MSC-S2", "Sistemet operative në kohë reale", "ELECTIVE", "EAR-MSC-S2-E1", 6, 2, 0, 2, "lavdim-kurtaj", "blend-arifaj", True),
-    ("EAR-MSC-FEA", "EAR-MSC-S2", "Analiza e sistemeve me elemente të fundme", "ELECTIVE", "EAR-MSC-S2-E1", 6, 2, 0, 2, "vjosa-shatri", "yllka-kabashi", False),
-    ("EAR-MSC-BIO", "EAR-MSC-S2", "Teknologjitë e imazhimit biomjekësor", "ELECTIVE", "EAR-MSC-S2-E1", 6, 2, 0, 2, "sabrije-osmanaj", "jeta-dobruna", False),
-    ("EAR-MSC-DMC", "EAR-MSC-S2", "Qarqet mikroelektronike digjitale", "ELECTIVE", "EAR-MSC-S2-E1", 6, 2, 0, 2, "milaim-zabeli", "arben-mashkulli", False),
-    ("EAR-MSC-AML", "EAR-MSC-S2", "Tema të avancuara në Machine Learning", "ELECTIVE", "EAR-MSC-S2-E1", 6, 2, 0, 2, "faton-maliqi", "labeat-arbneshi", False),
+    (
+        "EAR-MSC-DD",
+        "EAR-MSC-S2",
+        "Projektimi digjital",
+        "MANDATORY",
+        None,
+        6,
+        2,
+        0,
+        2,
+        "milaim-zabeli",
+        "arben-mashkulli",
+        True,
+    ),
+    (
+        "EAR-MSC-ES",
+        "EAR-MSC-S2",
+        "Sistemet e dedikuara",
+        "MANDATORY",
+        None,
+        6,
+        2,
+        0,
+        2,
+        "faton-maliqi",
+        "mergim-hoti",
+        True,
+    ),
+    (
+        "EAR-MSC-ROB",
+        "EAR-MSC-S2",
+        "Robotika dhe automatizimi",
+        "MANDATORY",
+        None,
+        6,
+        2,
+        0,
+        2,
+        "lavdim-kurtaj",
+        "adrian-ymeri",
+        True,
+    ),
+    (
+        "EAR-MSC-ID",
+        "EAR-MSC-S2",
+        "Identifikimi i sistemeve",
+        "ELECTIVE",
+        "EAR-MSC-S2-E1",
+        6,
+        2,
+        0,
+        2,
+        "faton-maliqi",
+        "adrian-ymeri",
+        True,
+    ),
+    (
+        "EAR-MSC-PC",
+        "EAR-MSC-S2",
+        "Rregullimi i proceseve me kompjuter",
+        "ELECTIVE",
+        "EAR-MSC-S2-E1",
+        6,
+        2,
+        0,
+        2,
+        "drilon-bunjaku",
+        "mergim-hoti",
+        False,
+    ),
+    (
+        "EAR-MSC-RTOS",
+        "EAR-MSC-S2",
+        "Sistemet operative në kohë reale",
+        "ELECTIVE",
+        "EAR-MSC-S2-E1",
+        6,
+        2,
+        0,
+        2,
+        "lavdim-kurtaj",
+        "blend-arifaj",
+        True,
+    ),
+    (
+        "EAR-MSC-FEA",
+        "EAR-MSC-S2",
+        "Analiza e sistemeve me elemente të fundme",
+        "ELECTIVE",
+        "EAR-MSC-S2-E1",
+        6,
+        2,
+        0,
+        2,
+        "vjosa-shatri",
+        "yllka-kabashi",
+        False,
+    ),
+    (
+        "EAR-MSC-BIO",
+        "EAR-MSC-S2",
+        "Teknologjitë e imazhimit biomjekësor",
+        "ELECTIVE",
+        "EAR-MSC-S2-E1",
+        6,
+        2,
+        0,
+        2,
+        "sabrije-osmanaj",
+        "jeta-dobruna",
+        False,
+    ),
+    (
+        "EAR-MSC-DMC",
+        "EAR-MSC-S2",
+        "Qarqet mikroelektronike digjitale",
+        "ELECTIVE",
+        "EAR-MSC-S2-E1",
+        6,
+        2,
+        0,
+        2,
+        "milaim-zabeli",
+        "arben-mashkulli",
+        False,
+    ),
+    (
+        "EAR-MSC-AML",
+        "EAR-MSC-S2",
+        "Tema të avancuara në Machine Learning",
+        "ELECTIVE",
+        "EAR-MSC-S2-E1",
+        6,
+        2,
+        0,
+        2,
+        "faton-maliqi",
+        "labeat-arbneshi",
+        False,
+    ),
     # TIK MSc, semester 2
-    ("TIK-MSC-AN", "TIK-MSC-S2", "Rrjetat e avancuara", "MANDATORY", None, 6, 3, 0, 1, "mimoza-ibrani", "blend-arifaj", True),
-    ("TIK-MSC-WC2", "TIK-MSC-S2", "Komunikimet pa tela II", "MANDATORY", None, 6, 3, 0, 1, "enver-hamiti", "adrian-ymeri", True),
-    ("TIK-MSC-MLCN", "TIK-MSC-S2", "Të mësuarit makinerik në rrjeta komunikuese", "MANDATORY", None, 6, 3, 0, 1, "zana-limani-fazliu", "mergim-hoti", True),
-    ("TIK-MSC-WLAB", "TIK-MSC-S2", "Komunikimet pa tela - LAB", "ELECTIVE", "TIK-MSC-S2-E4", 6, 2, 0, 1, "zana-limani-fazliu", "yllka-kabashi", True),
-    ("TIK-MSC-ALAB", "TIK-MSC-S2", "Laboratori i rrjetave të avancuara komunikuese", "ELECTIVE", "TIK-MSC-S2-E4", 6, 2, 0, 1, "department-fiek", "department-fiek", False),
-    ("TIK-MSC-APROG", "TIK-MSC-S2", "Programim i avancuar për TIK", "ELECTIVE", "TIK-MSC-S2-E4", 6, 2, 0, 1, "zana-limani-fazliu", "adrian-ymeri", False),
-    ("TIK-MSC-IMCV", "TIK-MSC-S2", "Përpunimi i imazheve dhe vizioni kompjuterik", "ELECTIVE", "TIK-MSC-S2-E4", 6, 2, 0, 1, "hena-maloku-berzati", "yllka-kabashi", False),
-    ("TIK-MSC-APM", "TIK-MSC-S2", "Menaxhimi i avancuar i projekteve në TIK", "ELECTIVE", "TIK-MSC-S2-E5", 6, 2, 0, 0, "department-fiek", "department-fiek", True),
-    ("TIK-MSC-REG", "TIK-MSC-S2", "Rregullimi dhe standardizimi në TIK", "ELECTIVE", "TIK-MSC-S2-E5", 6, 2, 0, 0, "bujar-krasniqi", "adrian-ymeri", False),
+    (
+        "TIK-MSC-AN",
+        "TIK-MSC-S2",
+        "Rrjetat e avancuara",
+        "MANDATORY",
+        None,
+        6,
+        3,
+        0,
+        1,
+        "mimoza-ibrani",
+        "blend-arifaj",
+        True,
+    ),
+    (
+        "TIK-MSC-WC2",
+        "TIK-MSC-S2",
+        "Komunikimet pa tela II",
+        "MANDATORY",
+        None,
+        6,
+        3,
+        0,
+        1,
+        "enver-hamiti",
+        "adrian-ymeri",
+        True,
+    ),
+    (
+        "TIK-MSC-MLCN",
+        "TIK-MSC-S2",
+        "Të mësuarit makinerik në rrjeta komunikuese",
+        "MANDATORY",
+        None,
+        6,
+        3,
+        0,
+        1,
+        "zana-limani-fazliu",
+        "mergim-hoti",
+        True,
+    ),
+    (
+        "TIK-MSC-WLAB",
+        "TIK-MSC-S2",
+        "Komunikimet pa tela - LAB",
+        "ELECTIVE",
+        "TIK-MSC-S2-E4",
+        6,
+        2,
+        0,
+        1,
+        "zana-limani-fazliu",
+        "yllka-kabashi",
+        True,
+    ),
+    (
+        "TIK-MSC-ALAB",
+        "TIK-MSC-S2",
+        "Laboratori i rrjetave të avancuara komunikuese",
+        "ELECTIVE",
+        "TIK-MSC-S2-E4",
+        6,
+        2,
+        0,
+        1,
+        "department-fiek",
+        "department-fiek",
+        False,
+    ),
+    (
+        "TIK-MSC-APROG",
+        "TIK-MSC-S2",
+        "Programim i avancuar për TIK",
+        "ELECTIVE",
+        "TIK-MSC-S2-E4",
+        6,
+        2,
+        0,
+        1,
+        "zana-limani-fazliu",
+        "adrian-ymeri",
+        False,
+    ),
+    (
+        "TIK-MSC-IMCV",
+        "TIK-MSC-S2",
+        "Përpunimi i imazheve dhe vizioni kompjuterik",
+        "ELECTIVE",
+        "TIK-MSC-S2-E4",
+        6,
+        2,
+        0,
+        1,
+        "hena-maloku-berzati",
+        "yllka-kabashi",
+        False,
+    ),
+    (
+        "TIK-MSC-APM",
+        "TIK-MSC-S2",
+        "Menaxhimi i avancuar i projekteve në TIK",
+        "ELECTIVE",
+        "TIK-MSC-S2-E5",
+        6,
+        2,
+        0,
+        0,
+        "department-fiek",
+        "department-fiek",
+        True,
+    ),
+    (
+        "TIK-MSC-REG",
+        "TIK-MSC-S2",
+        "Rregullimi dhe standardizimi në TIK",
+        "ELECTIVE",
+        "TIK-MSC-S2-E5",
+        6,
+        2,
+        0,
+        0,
+        "bujar-krasniqi",
+        "adrian-ymeri",
+        False,
+    ),
     # EE MSc, semester 2
-    ("EE-MSC-GRID", "EE-MSC-S2", "Integrimi i burimeve të ripërtëritshme në sistemet elektroenergjetike", "MANDATORY", None, 6, 2, 1, 2, "vezir-rexhepi", "arben-mashkulli", True),
-    ("EE-MSC-STORAGE", "EE-MSC-S2", "Sistemet për ruajtjen e energjisë dhe teknologjitë e avancuara", "MANDATORY", None, 6, 2, 1, 2, "qamil-kabashi", "drilon-bunjaku", True),
-    ("EE-MSC-RM", "EE-MSC-S2", "Metodologjia shkencore dhe kërkimore", "MANDATORY", None, 6, 2, 2, 0, "milaim-zabeli", "blerim-rexha", True),
-    ("EE-MSC-SW", "EE-MSC-S2", "Aplikimi i softuerëve në projektim të sistemeve elektroenergjetike", "ELECTIVE", "EE-MSC-S2-E4", 6, 2, 0, 2, "department-fiek", "department-fiek", False),
-    ("EE-MSC-APE", "EE-MSC-S2", "Elektronika e avancuar e fuqisë", "ELECTIVE", "EE-MSC-S2-E4", 6, 2, 1, 2, "qamil-kabashi", "arben-mashkulli", True),
-    ("EE-MSC-MATH", "EE-MSC-S2", "Metodat matematikore në inxhinieri", "ELECTIVE", "EE-MSC-S2-E4", 6, 2, 2, 0, "valdete-rexhebeqaj-hamiti", "shqipe-lohaj", False),
-    ("EE-MSC-ECONM", "EE-MSC-S2", "Menaxhimi ekonomik i sistemeve elektroenergjetike", "ELECTIVE", "EE-MSC-S2-E4", 6, 2, 2, 0, "department-fiek", "department-fiek", False),
-    ("EE-MSC-EUPOL", "EE-MSC-S2", "Politikat ekonomike dhe ambientale të EU-së", "ELECTIVE", "EE-MSC-S2-E4", 6, 2, 2, 0, "department-fiek", "department-fiek", False),
-    ("EE-MSC-FIN", "EE-MSC-S2", "Menaxhmenti financiar", "ELECTIVE", "EE-MSC-S2-E5", 6, 2, 2, 0, "nora-sadiku-dushi", "jeta-dobruna", False),
-    ("EE-MSC-HRM", "EE-MSC-S2", "Menaxhimi i burimeve njerëzore", "ELECTIVE", "EE-MSC-S2-E5", 6, 2, 2, 0, "nora-sadiku-dushi", "jeta-dobruna", True),
+    (
+        "EE-MSC-GRID",
+        "EE-MSC-S2",
+        "Integrimi i burimeve të ripërtëritshme në sistemet elektroenergjetike",
+        "MANDATORY",
+        None,
+        6,
+        2,
+        1,
+        2,
+        "vezir-rexhepi",
+        "arben-mashkulli",
+        True,
+    ),
+    (
+        "EE-MSC-STORAGE",
+        "EE-MSC-S2",
+        "Sistemet për ruajtjen e energjisë dhe teknologjitë e avancuara",
+        "MANDATORY",
+        None,
+        6,
+        2,
+        1,
+        2,
+        "qamil-kabashi",
+        "drilon-bunjaku",
+        True,
+    ),
+    (
+        "EE-MSC-RM",
+        "EE-MSC-S2",
+        "Metodologjia shkencore dhe kërkimore",
+        "MANDATORY",
+        None,
+        6,
+        2,
+        2,
+        0,
+        "milaim-zabeli",
+        "blerim-rexha",
+        True,
+    ),
+    (
+        "EE-MSC-SW",
+        "EE-MSC-S2",
+        "Aplikimi i softuerëve në projektim të sistemeve elektroenergjetike",
+        "ELECTIVE",
+        "EE-MSC-S2-E4",
+        6,
+        2,
+        0,
+        2,
+        "department-fiek",
+        "department-fiek",
+        False,
+    ),
+    (
+        "EE-MSC-APE",
+        "EE-MSC-S2",
+        "Elektronika e avancuar e fuqisë",
+        "ELECTIVE",
+        "EE-MSC-S2-E4",
+        6,
+        2,
+        1,
+        2,
+        "qamil-kabashi",
+        "arben-mashkulli",
+        True,
+    ),
+    (
+        "EE-MSC-MATH",
+        "EE-MSC-S2",
+        "Metodat matematikore në inxhinieri",
+        "ELECTIVE",
+        "EE-MSC-S2-E4",
+        6,
+        2,
+        2,
+        0,
+        "valdete-rexhebeqaj-hamiti",
+        "shqipe-lohaj",
+        False,
+    ),
+    (
+        "EE-MSC-ECONM",
+        "EE-MSC-S2",
+        "Menaxhimi ekonomik i sistemeve elektroenergjetike",
+        "ELECTIVE",
+        "EE-MSC-S2-E4",
+        6,
+        2,
+        2,
+        0,
+        "department-fiek",
+        "department-fiek",
+        False,
+    ),
+    (
+        "EE-MSC-EUPOL",
+        "EE-MSC-S2",
+        "Politikat ekonomike dhe ambientale të EU-së",
+        "ELECTIVE",
+        "EE-MSC-S2-E4",
+        6,
+        2,
+        2,
+        0,
+        "department-fiek",
+        "department-fiek",
+        False,
+    ),
+    (
+        "EE-MSC-FIN",
+        "EE-MSC-S2",
+        "Menaxhmenti financiar",
+        "ELECTIVE",
+        "EE-MSC-S2-E5",
+        6,
+        2,
+        2,
+        0,
+        "nora-sadiku-dushi",
+        "jeta-dobruna",
+        False,
+    ),
+    (
+        "EE-MSC-HRM",
+        "EE-MSC-S2",
+        "Menaxhimi i burimeve njerëzore",
+        "ELECTIVE",
+        "EE-MSC-S2-E5",
+        6,
+        2,
+        2,
+        0,
+        "nora-sadiku-dushi",
+        "jeta-dobruna",
+        True,
+    ),
 ]
 
 _ELECTIVE_GROUP_SPECS = [
@@ -209,8 +1054,7 @@ ELECTIVE_GROUPS: list[SeedRow] = [
 ]
 
 COURSES: list[SeedRow] = [
-    {"key": spec[0], "code": spec[0], "name": spec[2], "is_active": True}
-    for spec in _COURSE_SPECS
+    {"key": spec[0], "code": spec[0], "name": spec[2], "is_active": True} for spec in _COURSE_SPECS
 ]
 
 CURRICULUM_COURSES: list[SeedRow] = [
@@ -284,7 +1128,13 @@ _STAFF_SPECS = [
     ("arben-gjukaj", "Arben", "Gjukaj", "ASSOCIATE_PROFESSOR", "INTERNAL"),
     ("hena-maloku-berzati", "Hëna", "Maloku Berzati", "ASSOCIATE_PROFESSOR", "INTERNAL"),
     ("shqipe-lohaj", "Shqipe", "Lohaj", "ASSOCIATE_PROFESSOR", "INTERNAL"),
-    ("valdete-rexhebeqaj-hamiti", "Valdete", "Rexhëbeqaj-Hamiti", "ASSOCIATE_PROFESSOR", "INTERNAL"),
+    (
+        "valdete-rexhebeqaj-hamiti",
+        "Valdete",
+        "Rexhëbeqaj-Hamiti",
+        "ASSOCIATE_PROFESSOR",
+        "INTERNAL",
+    ),
     ("vezir-rexhepi", "Vezir", "Rexhepi", "ASSOCIATE_PROFESSOR", "INTERNAL"),
     ("zana-limani-fazliu", "Zana", "Limani-Fazliu", "ASSOCIATE_PROFESSOR", "INTERNAL"),
     ("artan-mazrekaj", "Artan", "Mazrekaj", "ASSISTANT_PROFESSOR", "INTERNAL"),
@@ -386,14 +1236,15 @@ _DAILY_AVAILABILITY_PATTERNS = (
     (time(8, 0), time(20, 0)),
 )
 STAFF_AVAILABILITY: list[SeedRow] = []
-for _staff_index, _staff in enumerate(STAFF_MEMBERS):
+for _staff_index, _staff_row in enumerate(STAFF_MEMBERS):
     _preferred_day = (_staff_index + 1) % 5 + 1
     for _day in range(1, 6):
         _start, _end = _DAILY_AVAILABILITY_PATTERNS[
             (_staff_index + _day - 1) % len(_DAILY_AVAILABILITY_PATTERNS)
         ]
-        if _staff["key"] == "blerim-rexha" and _day == 1:
+        if _staff_row["key"] == "blerim-rexha" and _day == 1:
             _start, _end = time(8, 0), time(15, 0)
+        _segments: tuple[tuple[time, time, str, int | None], ...]
         if _day == _preferred_day:
             if _staff_index % 2 == 0:
                 _segments = (
@@ -410,8 +1261,8 @@ for _staff_index, _staff in enumerate(STAFF_MEMBERS):
         for _segment_start, _segment_end, _availability_type, _weight in _segments:
             STAFF_AVAILABILITY.append(
                 {
-                    "key": f"{_staff['key']}:D{_day}:{_availability_type}",
-                    "staff_member_key": _staff["key"],
+                    "key": f"{_staff_row['key']}:D{_day}:{_availability_type}",
+                    "staff_member_key": _staff_row["key"],
                     "academic_term_key": TERM_KEY,
                     "day_of_week": _day,
                     "start_time": _segment_start,
@@ -457,14 +1308,20 @@ for _semester_key, _cohort_size in _ACTIVE_PROGRAMS.items():
         "LABORATORY": [],
     }
 
-    def _add_group(key: str, parent: str | None, group_type: str, size: int) -> None:
+    def _add_group(
+        key: str,
+        parent: str | None,
+        group_type: str,
+        size: int,
+        semester_key: str = _semester_key,
+    ) -> None:
         STUDENT_GROUPS.append(
             {
                 "key": key,
-                "program_semester_key": _semester_key,
+                "program_semester_key": semester_key,
                 "academic_term_key": TERM_KEY,
                 "parent_group_key": parent,
-                "name": key.removeprefix(f"{_semester_key}-"),
+                "name": key.removeprefix(f"{semester_key}-"),
                 "group_type": group_type,
                 "student_count": size,
                 "is_active": True,
@@ -486,38 +1343,187 @@ for _semester_key, _cohort_size in _ACTIVE_PROGRAMS.items():
             _numerical_key = f"{_lecture_key}-N{_numerical_no}"
             _add_group(_numerical_key, _lecture_key, "NUMERICAL_GROUP", _numerical_size)
             _GROUPS_BY_SEMESTER[_semester_key]["NUMERICAL"].append(_numerical_key)
-            for _lab_no, _lab_size in enumerate(
-                _split(_numerical_size, MAX_LAB_STUDENTS), start=1
-            ):
+            for _lab_no, _lab_size in enumerate(_split(_numerical_size, MAX_LAB_STUDENTS), start=1):
                 _lab_key = f"{_numerical_key}-L{_lab_no}"
                 _add_group(_lab_key, _numerical_key, "LAB_GROUP", _lab_size)
                 _GROUPS_BY_SEMESTER[_semester_key]["LABORATORY"].append(_lab_key)
 
 ROOMS: list[SeedRow] = [
-    {"key": "408", "faculty_key": "FIEK", "code": "408", "name": "Amfiteatri 408", "capacity": 300, "room_type": "GENERAL_ROOM", "status": "ACTIVE"},
-    {"key": "411", "faculty_key": "FIEK", "code": "411", "name": "Amfiteatri 411", "capacity": 300, "room_type": "GENERAL_ROOM", "status": "ACTIVE"},
-    {"key": "414", "faculty_key": "FIEK", "code": "414", "name": "Salla 414", "capacity": 150, "room_type": "GENERAL_ROOM", "status": "ACTIVE"},
-    {"key": "415", "faculty_key": "FIEK", "code": "415", "name": "Salla 415", "capacity": 150, "room_type": "GENERAL_ROOM", "status": "ACTIVE"},
-    {"key": "626", "faculty_key": "FIEK", "code": "626", "name": "Salla 626", "capacity": 60, "room_type": "GENERAL_ROOM", "status": "ACTIVE"},
-    {"key": "611", "faculty_key": "FIEK", "code": "611", "name": "Salla 611", "capacity": 60, "room_type": "GENERAL_ROOM", "status": "ACTIVE"},
-    {"key": "621", "faculty_key": "FIEK", "code": "621", "name": "Salla 621", "capacity": 60, "room_type": "GENERAL_ROOM", "status": "ACTIVE"},
-    {"key": "636", "faculty_key": "FIEK", "code": "636", "name": "Salla 636", "capacity": 60, "room_type": "GENERAL_ROOM", "status": "ACTIVE"},
-    {"key": "616", "faculty_key": "FIEK", "code": "616", "name": "Salla 616", "capacity": 60, "room_type": "GENERAL_ROOM", "status": "ACTIVE"},
+    {
+        "key": "408",
+        "faculty_key": "FIEK",
+        "code": "408",
+        "name": "Amfiteatri 408",
+        "capacity": 300,
+        "room_type": "GENERAL_ROOM",
+        "status": "ACTIVE",
+    },
+    {
+        "key": "411",
+        "faculty_key": "FIEK",
+        "code": "411",
+        "name": "Amfiteatri 411",
+        "capacity": 300,
+        "room_type": "GENERAL_ROOM",
+        "status": "ACTIVE",
+    },
+    {
+        "key": "414",
+        "faculty_key": "FIEK",
+        "code": "414",
+        "name": "Salla 414",
+        "capacity": 150,
+        "room_type": "GENERAL_ROOM",
+        "status": "ACTIVE",
+    },
+    {
+        "key": "415",
+        "faculty_key": "FIEK",
+        "code": "415",
+        "name": "Salla 415",
+        "capacity": 150,
+        "room_type": "GENERAL_ROOM",
+        "status": "ACTIVE",
+    },
+    {
+        "key": "626",
+        "faculty_key": "FIEK",
+        "code": "626",
+        "name": "Salla 626",
+        "capacity": 60,
+        "room_type": "GENERAL_ROOM",
+        "status": "ACTIVE",
+    },
+    {
+        "key": "611",
+        "faculty_key": "FIEK",
+        "code": "611",
+        "name": "Salla 611",
+        "capacity": 60,
+        "room_type": "GENERAL_ROOM",
+        "status": "ACTIVE",
+    },
+    {
+        "key": "621",
+        "faculty_key": "FIEK",
+        "code": "621",
+        "name": "Salla 621",
+        "capacity": 60,
+        "room_type": "GENERAL_ROOM",
+        "status": "ACTIVE",
+    },
+    {
+        "key": "636",
+        "faculty_key": "FIEK",
+        "code": "636",
+        "name": "Salla 636",
+        "capacity": 60,
+        "room_type": "GENERAL_ROOM",
+        "status": "ACTIVE",
+    },
+    {
+        "key": "616",
+        "faculty_key": "FIEK",
+        "code": "616",
+        "name": "Salla 616",
+        "capacity": 60,
+        "room_type": "GENERAL_ROOM",
+        "status": "ACTIVE",
+    },
     # Capacity 60 for room 201 is an explicit test assumption until confirmed.
-    {"key": "201", "faculty_key": "FIEK", "code": "201", "name": "Salla 201", "capacity": 60, "room_type": "GENERAL_ROOM", "status": "ACTIVE"},
-    {"key": "745", "faculty_key": "FIEK", "code": "745", "name": "Salla 745", "capacity": 40, "room_type": "GENERAL_ROOM", "status": "ACTIVE"},
-    {"key": "311", "faculty_key": "FIEK", "code": "311", "name": "Salla 311", "capacity": 40, "room_type": "GENERAL_ROOM", "status": "ACTIVE"},
-    {"key": "A3", "faculty_key": "FIEK", "code": "A3", "name": "Salla A3", "capacity": 40, "room_type": "GENERAL_ROOM", "status": "ACTIVE"},
-    {"key": "310", "faculty_key": "FIEK", "code": "310", "name": "Salla 310", "capacity": 40, "room_type": "GENERAL_ROOM", "status": "ACTIVE"},
-    {"key": "615", "faculty_key": "FIEK", "code": "615", "name": "Laboratori kompjuterik 615", "capacity": 24, "room_type": "LABORATORY", "status": "ACTIVE"},
-    {"key": "LAB-EAR", "faculty_key": "FIEK", "code": "LAB-EAR", "name": "Laboratori i automatikës", "capacity": 20, "room_type": "LABORATORY", "status": "ACTIVE"},
-    {"key": "LAB-TIK", "faculty_key": "FIEK", "code": "LAB-TIK", "name": "Laboratori i telekomunikacionit", "capacity": 20, "room_type": "LABORATORY", "status": "ACTIVE"},
-    {"key": "LAB-ENERGY", "faculty_key": "FIEK", "code": "LAB-ENERGY", "name": "Laboratori i elektroenergjetikës", "capacity": 20, "room_type": "LABORATORY", "status": "ACTIVE"},
-    {"key": "LAB-OLD", "faculty_key": "FIEK", "code": "LAB-OLD", "name": "Laboratori jashtë përdorimit", "capacity": 20, "room_type": "LABORATORY", "status": "MAINTENANCE"},
+    {
+        "key": "201",
+        "faculty_key": "FIEK",
+        "code": "201",
+        "name": "Salla 201",
+        "capacity": 60,
+        "room_type": "GENERAL_ROOM",
+        "status": "ACTIVE",
+    },
+    {
+        "key": "745",
+        "faculty_key": "FIEK",
+        "code": "745",
+        "name": "Salla 745",
+        "capacity": 40,
+        "room_type": "GENERAL_ROOM",
+        "status": "ACTIVE",
+    },
+    {
+        "key": "311",
+        "faculty_key": "FIEK",
+        "code": "311",
+        "name": "Salla 311",
+        "capacity": 40,
+        "room_type": "GENERAL_ROOM",
+        "status": "ACTIVE",
+    },
+    {
+        "key": "A3",
+        "faculty_key": "FIEK",
+        "code": "A3",
+        "name": "Salla A3",
+        "capacity": 40,
+        "room_type": "GENERAL_ROOM",
+        "status": "ACTIVE",
+    },
+    {
+        "key": "310",
+        "faculty_key": "FIEK",
+        "code": "310",
+        "name": "Salla 310",
+        "capacity": 40,
+        "room_type": "GENERAL_ROOM",
+        "status": "ACTIVE",
+    },
+    {
+        "key": "615",
+        "faculty_key": "FIEK",
+        "code": "615",
+        "name": "Laboratori kompjuterik 615",
+        "capacity": 24,
+        "room_type": "LABORATORY",
+        "status": "ACTIVE",
+    },
+    {
+        "key": "LAB-EAR",
+        "faculty_key": "FIEK",
+        "code": "LAB-EAR",
+        "name": "Laboratori i automatikës",
+        "capacity": 20,
+        "room_type": "LABORATORY",
+        "status": "ACTIVE",
+    },
+    {
+        "key": "LAB-TIK",
+        "faculty_key": "FIEK",
+        "code": "LAB-TIK",
+        "name": "Laboratori i telekomunikacionit",
+        "capacity": 20,
+        "room_type": "LABORATORY",
+        "status": "ACTIVE",
+    },
+    {
+        "key": "LAB-ENERGY",
+        "faculty_key": "FIEK",
+        "code": "LAB-ENERGY",
+        "name": "Laboratori i elektroenergjetikës",
+        "capacity": 20,
+        "room_type": "LABORATORY",
+        "status": "ACTIVE",
+    },
+    {
+        "key": "LAB-OLD",
+        "faculty_key": "FIEK",
+        "code": "LAB-OLD",
+        "name": "Laboratori jashtë përdorimit",
+        "capacity": 20,
+        "room_type": "LABORATORY",
+        "status": "MAINTENANCE",
+    },
 ]
 
-ROOM_AVAILABILITY: list[SeedRow] = [
-]
+ROOM_AVAILABILITY: list[SeedRow] = []
 for _room in ROOMS:
     for _day in range(1, 6):
         _is_active = _room["status"] == "ACTIVE"
@@ -629,7 +1635,9 @@ def _add_session(
     group_label = group_key.removeprefix(f"{curriculum['program_semester_key']}-")
     session_name = f"{component.title()} {group_label}"
     session_key = f"{offering_key}:{session_name}"
-    weekly_frequency = 2 if curriculum["course_key"] == "IKS-BSC-NET" and component == "LABORATORY" else 1
+    weekly_frequency = (
+        2 if curriculum["course_key"] == "IKS-BSC-NET" and component == "LABORATORY" else 1
+    )
     duration_slots = 1 if weekly_frequency == 2 else periods
     required_room_type = "LABORATORY" if component == "LABORATORY" else "GENERAL_ROOM"
     fixed_labs = {
@@ -637,7 +1645,9 @@ def _add_session(
         "TIK-MSC-WLAB": "LAB-TIK",
         "EE-MSC-STORAGE": "LAB-ENERGY",
     }
-    required_room_key = fixed_labs.get(curriculum["course_key"]) if component == "LABORATORY" else None
+    required_room_key = (
+        fixed_labs.get(curriculum["course_key"]) if component == "LABORATORY" else None
+    )
     COURSE_SESSIONS.append(
         {
             "key": session_key,
@@ -692,12 +1702,18 @@ for _curriculum in CURRICULUM_COURSES:
         ("NUMERICAL", "numerical_periods_per_week", _assistant),
         ("LABORATORY", "laboratory_periods_per_week", _assistant),
     )
-    for _component, _period_field, _staff in _components:
+    for _component, _period_field, _assigned_staff_key in _components:
         _periods = _curriculum[_period_field]
         if not _periods:
             continue
         for _group_key in _GROUPS_BY_SEMESTER[_curriculum["program_semester_key"]][_component]:
-            _add_session(_curriculum, _component, _group_key, _periods, _staff)
+            _add_session(
+                _curriculum,
+                _component,
+                _group_key,
+                _periods,
+                _assigned_staff_key,
+            )
 
 COURSE_SESSION_TIME_CONSTRAINTS: list[SeedRow] = []
 for _session in COURSE_SESSIONS:
@@ -748,7 +1764,9 @@ COURSE_SESSION_TIME_CONSTRAINTS.append(
 
 _wireless_curriculum = "TIK-MSC-S2:TIK-MSC-WLAB"
 _wireless_lab_group = _GROUPS_BY_SEMESTER["TIK-MSC-S2"]["LABORATORY"][0]
-_wireless_lab_session = _SESSION_BY_COMPONENT_GROUP[(_wireless_curriculum, "LABORATORY", _wireless_lab_group)]
+_wireless_lab_session = _SESSION_BY_COMPONENT_GROUP[
+    (_wireless_curriculum, "LABORATORY", _wireless_lab_group)
+]
 COURSE_SESSION_TIME_CONSTRAINTS.append(
     {
         "key": f"{_wireless_lab_session}:FORBIDDEN-FRIDAY",
@@ -788,7 +1806,10 @@ def _dependency(predecessor: str, successor: str, dependency_type: str) -> None:
 
 
 for _curriculum in CURRICULUM_COURSES:
-    if _curriculum["course_key"] not in _OFFERED_CODES or not _curriculum["lecture_periods_per_week"]:
+    if (
+        _curriculum["course_key"] not in _OFFERED_CODES
+        or not _curriculum["lecture_periods_per_week"]
+    ):
         continue
     _semester_key = _curriculum["program_semester_key"]
     for _component in ("NUMERICAL", "LABORATORY"):
@@ -796,8 +1817,12 @@ for _curriculum in CURRICULUM_COURSES:
             continue
         for _group_key in _GROUPS_BY_SEMESTER[_semester_key][_component]:
             _lecture_group = _ancestor_of_type(_group_key, "LECTURE_GROUP")
-            _lecture_session = _SESSION_BY_COMPONENT_GROUP[(_curriculum["key"], "LECTURE", _lecture_group)]
-            _child_session = _SESSION_BY_COMPONENT_GROUP[(_curriculum["key"], _component, _group_key)]
+            _lecture_session = _SESSION_BY_COMPONENT_GROUP[
+                (_curriculum["key"], "LECTURE", _lecture_group)
+            ]
+            _child_session = _SESSION_BY_COMPONENT_GROUP[
+                (_curriculum["key"], _component, _group_key)
+            ]
             _dependency(_lecture_session, _child_session, "PRECEDES")
 
 # Add meaningful variants without making the problem contradictory.
@@ -811,7 +1836,9 @@ _dependency(
 )
 
 _wireless_lecture_group = _ancestor_of_type(_wireless_lab_group, "LECTURE_GROUP")
-_wireless_lecture_session = _SESSION_BY_COMPONENT_GROUP[(_wireless_curriculum, "LECTURE", _wireless_lecture_group)]
+_wireless_lecture_session = _SESSION_BY_COMPONENT_GROUP[
+    (_wireless_curriculum, "LECTURE", _wireless_lecture_group)
+]
 _dependency(_wireless_lecture_session, _wireless_lab_session, "SAME_DAY")
 _dependency(_wireless_lecture_session, _wireless_lab_session, "CONSECUTIVE")
 
@@ -877,10 +1904,26 @@ def validate_seed_data() -> None:
     assert_unique(CURRICULUM_COURSES, "program_semester_key", "course_key")
     assert_unique(STAFF_MEMBERS, "faculty_key", "first_name", "last_name")
     assert_unique(STAFF_COURSES, "staff_member_key", "course_key")
-    assert_unique(STAFF_AVAILABILITY, "staff_member_key", "academic_term_key", "day_of_week", "start_time", "end_time", "availability_type")
+    assert_unique(
+        STAFF_AVAILABILITY,
+        "staff_member_key",
+        "academic_term_key",
+        "day_of_week",
+        "start_time",
+        "end_time",
+        "availability_type",
+    )
     assert_unique(STUDENT_GROUPS, "program_semester_key", "academic_term_key", "name")
     assert_unique(ROOMS, "faculty_key", "code")
-    assert_unique(ROOM_AVAILABILITY, "room_key", "academic_term_key", "day_of_week", "start_time", "end_time", "availability_type")
+    assert_unique(
+        ROOM_AVAILABILITY,
+        "room_key",
+        "academic_term_key",
+        "day_of_week",
+        "start_time",
+        "end_time",
+        "availability_type",
+    )
     assert_unique(PROGRAM_ROOM_PREFERENCES, "study_program_key", "room_key")
     assert_unique(SCHEDULING_PROFILES, "faculty_key", "name")
     assert_unique(TIME_SLOTS, "scheduling_profile_key", "day_of_week", "slot_index")
@@ -889,8 +1932,20 @@ def validate_seed_data() -> None:
     assert_unique(COURSE_SESSIONS, "course_offering_key", "name")
     assert_unique(COURSE_SESSION_GROUPS, "course_session_key", "student_group_key")
     assert_unique(COURSE_SESSION_STAFF, "course_session_key", "staff_member_key")
-    assert_unique(COURSE_SESSION_TIME_CONSTRAINTS, "course_session_key", "day_of_week", "start_time", "end_time", "constraint_type")
-    assert_unique(COURSE_SESSION_DEPENDENCIES, "predecessor_session_key", "successor_session_key", "dependency_type")
+    assert_unique(
+        COURSE_SESSION_TIME_CONSTRAINTS,
+        "course_session_key",
+        "day_of_week",
+        "start_time",
+        "end_time",
+        "constraint_type",
+    )
+    assert_unique(
+        COURSE_SESSION_DEPENDENCIES,
+        "predecessor_session_key",
+        "successor_session_key",
+        "dependency_type",
+    )
 
     # Foreign-key existence checks fail with useful seed keys before SQLAlchemy
     # can fail with a less specific database exception.
@@ -953,14 +2008,24 @@ def validate_seed_data() -> None:
 
     elective_members: dict[str, list[SeedRow]] = defaultdict(list)
     for row in CURRICULUM_COURSES:
-        total_periods = sum(row[field] for field in ("lecture_periods_per_week", "numerical_periods_per_week", "laboratory_periods_per_week"))
+        total_periods = sum(
+            row[field]
+            for field in (
+                "lecture_periods_per_week",
+                "numerical_periods_per_week",
+                "laboratory_periods_per_week",
+            )
+        )
         if row["requires_timetable"] != (total_periods > 0):
             raise ValueError(f"requires_timetable/period mismatch: {row['key']}")
         if row["course_type"] == "MANDATORY" and row["elective_group_key"] is not None:
             raise ValueError(f"Mandatory course has elective group: {row['key']}")
         if row["course_type"] == "ELECTIVE":
             group_key = row["elective_group_key"]
-            if group_key is None or elective_groups[group_key]["program_semester_key"] != row["program_semester_key"]:
+            if (
+                group_key is None
+                or elective_groups[group_key]["program_semester_key"] != row["program_semester_key"]
+            ):
                 raise ValueError(f"Invalid elective group: {row['key']}")
             elective_members[group_key].append(row)
 
@@ -975,7 +2040,9 @@ def validate_seed_data() -> None:
         selected = sum(member["key"] in offered_curricula for member in members)
         required = elective_groups[group_key]["required_choices"]
         if selected != required:
-            raise ValueError(f"Elective selection mismatch for {group_key}: {selected} != {required}")
+            raise ValueError(
+                f"Elective selection mismatch for {group_key}: {selected} != {required}"
+            )
 
     represented = {
         program_semesters[row["program_semester_key"]]["study_program_key"]
@@ -983,7 +2050,9 @@ def validate_seed_data() -> None:
         if row["key"] in offered_curricula
     }
     if represented != set(programs):
-        raise ValueError(f"Not all FIEK programs have offerings: {sorted(set(programs) - represented)}")
+        raise ValueError(
+            f"Not all FIEK programs have offerings: {sorted(set(programs) - represented)}"
+        )
 
     type_limits = {
         "LECTURE_GROUP": MAX_LECTURE_STUDENTS,
@@ -992,12 +2061,19 @@ def validate_seed_data() -> None:
     }
     for group in STUDENT_GROUPS:
         parent_key = group["parent_group_key"]
-        if group["group_type"] in type_limits and group["student_count"] > type_limits[group["group_type"]]:
+        if (
+            group["group_type"] in type_limits
+            and group["student_count"] > type_limits[group["group_type"]]
+        ):
             raise ValueError(f"Oversized student group: {group['key']}")
         if parent_key is None:
             continue
         parent = groups[parent_key]
-        if parent["program_semester_key"] != group["program_semester_key"] or parent["academic_term_key"] != group["academic_term_key"] or group["student_count"] > parent["student_count"]:
+        if (
+            parent["program_semester_key"] != group["program_semester_key"]
+            or parent["academic_term_key"] != group["academic_term_key"]
+            or group["student_count"] > parent["student_count"]
+        ):
             raise ValueError(f"Invalid student-group parent: {group['key']}")
         seen = {group["key"]}
         current: str | None = parent_key
@@ -1012,11 +2088,18 @@ def validate_seed_data() -> None:
         if group["parent_group_key"] is not None:
             children[group["parent_group_key"]].append(group)
     for parent_key, child_rows in children.items():
-        if sum(child["student_count"] for child in child_rows) != groups[parent_key]["student_count"]:
+        if (
+            sum(child["student_count"] for child in child_rows)
+            != groups[parent_key]["student_count"]
+        ):
             raise ValueError(f"Child-group totals do not match {parent_key}")
 
     qualifications = {(row["staff_member_key"], row["course_key"]): row for row in STAFF_COURSES}
-    role_permission = {"LECTURER": "can_lecture", "NUMERICAL_INSTRUCTOR": "can_assist", "LAB_INSTRUCTOR": "can_assist"}
+    role_permission = {
+        "LECTURER": "can_lecture",
+        "NUMERICAL_INSTRUCTOR": "can_assist",
+        "LAB_INSTRUCTOR": "can_assist",
+    }
     session_groups: dict[str, list[str]] = defaultdict(list)
     for link in COURSE_SESSION_GROUPS:
         session_groups[link["course_session_key"]].append(link["student_group_key"])
@@ -1037,11 +2120,20 @@ def validate_seed_data() -> None:
             raise ValueError(f"Session workload does not match curriculum: {session['key']}")
         for group_key in session_groups[session["key"]]:
             group = groups[group_key]
-            if group["program_semester_key"] != curriculum_row["program_semester_key"] or group["academic_term_key"] != offering["academic_term_key"]:
+            if (
+                group["program_semester_key"] != curriculum_row["program_semester_key"]
+                or group["academic_term_key"] != offering["academic_term_key"]
+            ):
                 raise ValueError(f"Session-group mismatch: {session['key']}")
             if session["max_students"] < group["student_count"]:
                 raise ValueError(f"Session capacity is below group size: {session['key']}")
-        compatible = [room for room in ROOMS if room["status"] == "ACTIVE" and room["room_type"] == session["required_room_type"] and room["capacity"] >= session["max_students"]]
+        compatible = [
+            room
+            for room in ROOMS
+            if room["status"] == "ACTIVE"
+            and room["room_type"] == session["required_room_type"]
+            and room["capacity"] >= session["max_students"]
+        ]
         if not compatible:
             raise ValueError(f"No compatible active room for session: {session['key']}")
         required_room_key = session["required_room_key"]
@@ -1058,7 +2150,9 @@ def validate_seed_data() -> None:
 
     for availability in (*STAFF_AVAILABILITY, *ROOM_AVAILABILITY):
         weighted = availability["availability_type"] in {"PREFERRED", "AVOID"}
-        if availability["start_time"] >= availability["end_time"] or weighted != (availability["preference_weight"] is not None):
+        if availability["start_time"] >= availability["end_time"] or weighted != (
+            availability["preference_weight"] is not None
+        ):
             raise ValueError(f"Invalid availability row: {availability['key']}")
 
     def validate_weekly_coverage(
@@ -1068,15 +2162,17 @@ def validate_seed_data() -> None:
         for row in rows:
             windows[(row[resource_field], row["day_of_week"])].append(row)
         expected = {
-            (resource_key, day)
-            for resource_key in expected_resources
-            for day in range(1, 6)
+            (resource_key, day) for resource_key in expected_resources for day in range(1, 6)
         }
         if set(windows) != expected:
             raise ValueError(f"Incomplete weekly availability for {resource_field}")
         for resource_day, day_rows in windows.items():
             ordered = sorted(day_rows, key=lambda row: row["start_time"])
-            for previous, current in zip(ordered, ordered[1:]):
+            for previous, current in zip(
+                ordered,
+                ordered[1:],
+                strict=False,
+            ):
                 if current["start_time"] < previous["end_time"]:
                     raise ValueError(f"Overlapping availability at {resource_day}")
 
@@ -1097,7 +2193,9 @@ def validate_seed_data() -> None:
         raise ValueError("Scheduling-profile limits do not match group generation.")
     for constraint in COURSE_SESSION_TIME_CONSTRAINTS:
         weighted = constraint["constraint_type"] == "PREFERRED_WINDOW"
-        if constraint["start_time"] >= constraint["end_time"] or weighted != (constraint["preference_weight"] is not None):
+        if constraint["start_time"] >= constraint["end_time"] or weighted != (
+            constraint["preference_weight"] is not None
+        ):
             raise ValueError(f"Invalid time constraint: {constraint['key']}")
 
     graph: dict[str, set[str]] = {key: set() for key in sessions}
@@ -1127,8 +2225,14 @@ def validate_seed_data() -> None:
 
     # Necessary (not sufficient) resource-capacity checks for a weekly model.
     for room_type in ("GENERAL_ROOM", "LABORATORY"):
-        demand = sum(session["weekly_frequency"] * session["duration_slots"] for session in COURSE_SESSIONS if session["required_room_type"] == room_type)
-        active_room_count = sum(room["status"] == "ACTIVE" and room["room_type"] == room_type for room in ROOMS)
+        demand = sum(
+            session["weekly_frequency"] * session["duration_slots"]
+            for session in COURSE_SESSIONS
+            if session["required_room_type"] == room_type
+        )
+        active_room_count = sum(
+            room["status"] == "ACTIVE" and room["room_type"] == room_type for room in ROOMS
+        )
         if demand > active_room_count * len(TIME_SLOTS):
             raise ValueError(f"Aggregate {room_type} demand exceeds weekly capacity.")
 

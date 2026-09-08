@@ -17,13 +17,8 @@ def export_published_timetable_csv(
 ) -> tuple[str, str]:
     run = get_timetable_run(db, timetable_run_id)
 
-    if (
-        run.status != TimetableRunStatus.SUCCEEDED
-        or not run.is_published
-    ):
-        raise TimetablePublishError(
-            "Only a successful published timetable can be downloaded."
-        )
+    if run.status != TimetableRunStatus.SUCCEEDED or not run.is_published:
+        raise TimetablePublishError("Only a successful published timetable can be downloaded.")
 
     validation = validate_timetable_run(db, run.id)
     if not validation.is_valid:
@@ -50,16 +45,10 @@ def export_published_timetable_csv(
 
     slots = tuple(
         db.scalars(
-            select(TimeSlot).where(
-                TimeSlot.scheduling_profile_id
-                == run.scheduling_profile_id
-            )
+            select(TimeSlot).where(TimeSlot.scheduling_profile_id == run.scheduling_profile_id)
         ).all()
     )
-    slot_by_position = {
-        (slot.day_of_week, slot.slot_index): slot
-        for slot in slots
-    }
+    slot_by_position = {(slot.day_of_week, slot.slot_index): slot for slot in slots}
 
     output = StringIO(newline="")
     writer = csv.writer(output)
@@ -92,14 +81,10 @@ def export_published_timetable_csv(
         ]
 
         groups = ", ".join(
-            assignment.student_group.name
-            for assignment in session.group_assignments
+            assignment.student_group.name for assignment in session.group_assignments
         )
         staff = ", ".join(
-            (
-                f"{assignment.staff_member.first_name} "
-                f"{assignment.staff_member.last_name}"
-            )
+            (f"{assignment.staff_member.first_name} {assignment.staff_member.last_name}")
             for assignment in session.staff_assignments
         )
 

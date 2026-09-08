@@ -35,9 +35,7 @@ def authenticate_admin(username: str, password: str) -> bool:
 
 def create_access_token(username: str) -> str:
     now = datetime.now(UTC)
-    expires_at = now + timedelta(
-        minutes=settings.access_token_expire_minutes
-    )
+    expires_at = now + timedelta(minutes=settings.access_token_expire_minutes)
 
     return jwt.encode(
         {
@@ -62,16 +60,9 @@ def require_admin(token: OptionalToken) -> CurrentUserRead:
         )
         username = payload.get("sub")
     except InvalidTokenError as error:
-        raise AuthenticationError(
-            "The access token is invalid or expired."
-        ) from error
+        raise AuthenticationError("The access token is invalid or expired.") from error
 
-    if (
-        not isinstance(username, str)
-        or not compare_digest(username, settings.admin_username)
-    ):
-        raise AuthenticationError(
-            "The access token is invalid or expired."
-        )
+    if not isinstance(username, str) or not compare_digest(username, settings.admin_username):
+        raise AuthenticationError("The access token is invalid or expired.")
 
     return CurrentUserRead(username=username)

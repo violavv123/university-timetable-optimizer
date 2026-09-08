@@ -4,9 +4,22 @@ from typing import Annotated, Self
 
 from app.models.enums import DayOfWeek, SchedulingAlgorithm, TimetableRunStatus
 from app.schemas.timetable_run import TimetableRunRead
-from pydantic import BaseModel, ConfigDict, Field, JsonValue, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 PositiveId = Annotated[int, Field(gt=0)]
+
+
+class SchedulingParameters(BaseModel):
+    """Supported first-version solver controls stored in TimetableRun.parameters."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    time_limit_seconds: float = Field(default=30.0, gt=0)
+    num_search_workers: int = Field(default=8, gt=0)
+    random_seed: int = Field(default=0, ge=0)
+    spread_repeated_occurrences: bool = True
+    unused_seat_weight: int = Field(default=1, ge=0)
+    log_search_progress: bool = False
 
 
 class TimetableGenerationRequest(BaseModel):
@@ -16,7 +29,7 @@ class TimetableGenerationRequest(BaseModel):
     scheduling_profile_id: int = Field(..., gt=0)
     name: str = Field(..., min_length=1, max_length=150)
     algorithm: SchedulingAlgorithm = SchedulingAlgorithm.HYBRID
-    parameters: dict[str, JsonValue] = Field(default_factory=dict)
+    parameters: SchedulingParameters = Field(default_factory=SchedulingParameters)
 
 
 class TimetableReoptimizationRequest(BaseModel):
@@ -26,7 +39,7 @@ class TimetableReoptimizationRequest(BaseModel):
     name: str = Field(..., min_length=1, max_length=150)
     algorithm: SchedulingAlgorithm = SchedulingAlgorithm.HYBRID
     preserve_locked_entries: bool = True
-    parameters: dict[str, JsonValue] = Field(default_factory=dict)
+    parameters: SchedulingParameters = Field(default_factory=SchedulingParameters)
 
 
 class SchedulingConflictRead(BaseModel):
