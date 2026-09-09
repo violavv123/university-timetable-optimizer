@@ -1,0 +1,40 @@
+.assignment-focus { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 18px; padding: 18px 20px; }
+.assignment-focus label { width: min(440px, 100%); }
+.assignment-focus label > span, .assignment-form label > span { display: block; margin-bottom: 7px; color: #67746f; font-size: 9px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
+.assignment-focus select, .assignment-form select { width: 100%; height: 40px; border: 1px solid var(--border); border-radius: 8px; padding: 0 11px; color: #35433e; background: white; }
+.assignment-focus > div { text-align: right; }
+.assignment-focus strong, .assignment-focus > div > span { display: block; }
+.assignment-focus strong { font-size: 13px; }
+.assignment-focus > div > span { margin-top: 4px; color: var(--muted); font-size: 10px; }
+.assignment-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+.assignment-panel { overflow: hidden; }
+.assignment-panel > header { min-height: 72px; display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; border-bottom: 1px solid var(--border); }
+.assignment-panel > header h2 { margin-top: 3px; font-size: 16px; }
+.assignment-panel > header > span { min-width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; color: var(--green-700); background: var(--green-50); font-size: 10px; font-weight: 800; }
+.assignment-table th, .assignment-table td { padding-inline: 14px; }
+.assignment-table td:last-child { width: 72px; }
+.assignment-table .table-actions { display: flex; justify-content: flex-end; gap: 5px; }
+.assignment-table .table-actions button { width: 29px; height: 29px; border: 1px solid var(--border); border-radius: 7px; display: grid; place-items: center; color: #64726d; background: white; }
+.assignment-table .table-actions button:hover { color: var(--green-700); border-color: #b9d5c9; background: var(--green-50); }
+.assignment-table .table-actions button.danger:hover { color: var(--danger); border-color: #e7c1bd; background: #fff4f3; }
+.assignment-table .table-actions svg { width: 13px; height: 13px; }
+.assignment-badges { display: flex; flex-wrap: wrap; gap: 5px; }
+.assignment-panel__form { padding: 18px; border-top: 1px solid var(--border); background: #fbfcfb; }
+.assignment-panel__form h3 { margin-bottom: 14px; font-size: 12px; }
+.assignment-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.assignment-form > label:first-child { grid-column: 1 / -1; }
+.assignment-checks { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 16px; padding: 3px 0; color: #65716d; font-size: 10px; }
+.assignment-checks label { display: flex; align-items: center; gap: 6px; }
+.assignment-checks input { accent-color: var(--green-700); }
+.assignment-form > .button { grid-column: 1 / -1; justify-self: start; }
+
+@media (max-width: 1180px) {
+  .assignment-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 600px) {
+  .assignment-focus { align-items: stretch; flex-direction: column; }
+  .assignment-focus > div { text-align: left; }
+  .assignment-form { grid-template-columns: 1fr; }
+  .assignment-form > label:first-child, .assignment-checks, .assignment-form > .button { grid-column: 1; }
+}

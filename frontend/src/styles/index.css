@@ -1,0 +1,11 @@
+@import "./base.css";
+@import "./layout.css";
+@import "./ui.css";
+@import "./pages/dashboard.css";
+@import "./pages/login.css";
+@import "./pages/generate.css";
+@import "./pages/runs.css";
+@import "./pages/timetable.css";
+@import "./pages/data-overview.css";
+@import "./pages/not-found.css";
+@import "./responsive.css";

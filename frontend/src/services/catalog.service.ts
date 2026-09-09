@@ -1,0 +1,45 @@
+import type {
+  AcademicTerm,
+  Course,
+  CourseOffering,
+  CourseSession,
+  CourseSessionGroup,
+  CourseSessionStaff,
+  CurriculumCourse,
+  Faculty,
+  ProgramSemester,
+  Room,
+  SchedulingProfile,
+  StaffAvailability,
+  StaffMember,
+  StudentGroup,
+  StudyProgram,
+  TimeSlot,
+  TimetableEntry,
+  TimetableRun,
+} from "../types";
+import { fetchAll, fetchPage, type QueryParameters } from "./pagination.service";
+import { httpClient } from "./http-client";
+
+export const catalogService = {
+  terms: () => fetchAll<AcademicTerm>("/academic/academic-terms", { include_inactive: false }),
+  faculties: () => fetchAll<Faculty>("/academic/faculties", { include_inactive: false }),
+  programs: () => fetchAll<StudyProgram>("/academic/study-programs", { include_inactive: false }),
+  semesters: () => fetchAll<ProgramSemester>("/academic/program-semesters", { include_inactive: false }),
+  profiles: () => fetchAll<SchedulingProfile>("/scheduling-input/scheduling-profiles", { include_inactive: false }),
+  rooms: () => fetchAll<Room>("/resources/rooms"),
+  staff: () => fetchAll<StaffMember>("/resources/staff-members", { include_inactive: false }),
+  staffAvailability: () => fetchAll<StaffAvailability>("/resources/staff-availability"),
+  groups: (termId?: number) => fetchAll<StudentGroup>("/resources/student-groups", { academic_term_id: termId, include_inactive: false }),
+  courses: () => fetchAll<Course>("/academic/courses", { include_inactive: false }),
+  curricula: () => fetchAll<CurriculumCourse>("/academic/curriculum-courses", { include_inactive: false }),
+  offerings: (termId?: number) => fetchAll<CourseOffering>("/scheduling-input/course-offerings", { academic_term_id: termId }),
+  sessions: () => fetchAll<CourseSession>("/scheduling-input/course-sessions", { include_inactive: false }),
+  sessionStaff: () => fetchAll<CourseSessionStaff>("/scheduling-input/course-session-staff"),
+  sessionGroups: () => fetchAll<CourseSessionGroup>("/scheduling-input/course-session-groups"),
+  slots: (profileId: number) => fetchAll<TimeSlot>("/scheduling-input/time-slots", { scheduling_profile_id: profileId, include_inactive: false }),
+  runs: (params: QueryParameters = {}) => fetchPage<TimetableRun>("/timetables/runs", { page: 1, page_size: 100, ...params }),
+  run: async (id: number) =>
+    (await httpClient.get<TimetableRun>(`/timetables/runs/${id}`)).data,
+  entries: (runId: number) => fetchAll<TimetableEntry>("/timetables/entries", { timetable_run_id: runId }),
+};

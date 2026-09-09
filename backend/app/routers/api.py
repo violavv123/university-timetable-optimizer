@@ -12,10 +12,10 @@ api_router.include_router(auth_router)
 protected_router = APIRouter(
     dependencies=[Depends(require_admin)],
 )
-api_router.include_router(academic_router)
-api_router.include_router(resources_router)
-api_router.include_router(scheduling_input_router)
-api_router.include_router(timetable_router)
+protected_router.include_router(academic_router)
+protected_router.include_router(resources_router)
+protected_router.include_router(scheduling_input_router)
+protected_router.include_router(timetable_router)
 
 api_router.include_router(protected_router)
 
