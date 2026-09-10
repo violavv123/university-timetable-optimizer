@@ -298,6 +298,7 @@ def complete_timetable_run(
     objective_score: Decimal | None = None,
     soft_penalty: Decimal | None = None,
     execution_time_ms: int | None = None,
+    validate: bool = True,
 ) -> TimetableRun:
     run = get_timetable_run(db, timetable_run_id)
     if run.status != TimetableRunStatus.RUNNING:
@@ -319,8 +320,12 @@ def complete_timetable_run(
         raise BusinessRuleError("soft_penalty cannot be negative.")
     if execution_time_ms is not None and execution_time_ms < 0:
         raise BusinessRuleError("execution_time_ms cannot be negative.")
-    validation = validate_timetable_run(db, run.id)
-    if status == TimetableRunStatus.SUCCEEDED and not validation.is_valid:
+    validation = validate_timetable_run(db, run.id) if validate else None
+    if (
+        status == TimetableRunStatus.SUCCEEDED
+        and validation is not None
+        and not validation.is_valid
+    ):
         raise BusinessRuleError(
             "A run with hard conflicts cannot be marked SUCCEEDED.",
             details={
@@ -330,7 +335,7 @@ def complete_timetable_run(
         )
     run.status = status
     run.objective_score = objective_score
-    run.hard_conflicts = validation.hard_conflict_count
+    run.hard_conflicts = validation.hard_conflict_count if validation is not None else 0
     run.soft_penalty = soft_penalty
     run.execution_time_ms = execution_time_ms
     return commit_and_refresh(db, run)

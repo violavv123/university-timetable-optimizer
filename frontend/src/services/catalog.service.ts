@@ -7,6 +7,7 @@ import type {
   CourseSessionStaff,
   CurriculumCourse,
   Faculty,
+  Level,
   ProgramSemester,
   Room,
   SchedulingProfile,
@@ -24,6 +25,7 @@ import { httpClient } from "./http-client";
 export const catalogService = {
   terms: () => fetchAll<AcademicTerm>("/academic/academic-terms", { include_inactive: false }),
   faculties: () => fetchAll<Faculty>("/academic/faculties", { include_inactive: false }),
+  levels: () => fetchAll<Level>("/academic/levels", { include_inactive: false }),
   programs: () => fetchAll<StudyProgram>("/academic/study-programs", { include_inactive: false }),
   semesters: () => fetchAll<ProgramSemester>("/academic/program-semesters", { include_inactive: false }),
   profiles: () => fetchAll<SchedulingProfile>("/scheduling-input/scheduling-profiles", { include_inactive: false }),

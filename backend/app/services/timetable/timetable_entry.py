@@ -293,7 +293,15 @@ def persist_solver_assignments(
     assignments: Sequence[TimetableAssignment],
     *,
     preserve_locked: bool = False,
+    validate_assignments: bool = True,
 ) -> tuple[TimetableEntry, ...]:
+    """Persist solver output.
+
+    Generation validates the complete solver result in memory immediately
+    before calling this function. In that path, repeating the per-entry
+    database conflict scan would turn persistence into O(n²) work. The
+    default remains fully validating for other callers.
+    """
     run = _lock_run(db, timetable_run_id)
     if run.status != TimetableRunStatus.RUNNING:
         raise ResourceInUseError(
@@ -323,14 +331,15 @@ def persist_solver_assignments(
                 "New solver assignments cannot be locked automatically; lock "
                 "them explicitly after a successful run."
             )
-        _validate_assignment(
-            db,
-            timetable_run_id=run.id,
-            course_session_id=assignment.course_session_id,
-            occurrence_number=assignment.occurrence_number,
-            room_id=assignment.room_id,
-            start_slot_id=assignment.start_slot_id,
-        )
+        if validate_assignments:
+            _validate_assignment(
+                db,
+                timetable_run_id=run.id,
+                course_session_id=assignment.course_session_id,
+                occurrence_number=assignment.occurrence_number,
+                room_id=assignment.room_id,
+                start_slot_id=assignment.start_slot_id,
+            )
         entry = TimetableEntry(
             timetable_run_id=run.id,
             course_session_id=assignment.course_session_id,
@@ -341,8 +350,11 @@ def persist_solver_assignments(
             assignment_source=AssignmentSource.SOLVER,
         )
         db.add(entry)
-        flush_transaction(db)
+        if validate_assignments:
+            flush_transaction(db)
         created.append(entry)
+    if not validate_assignments:
+        flush_transaction(db)
     commit_transaction(db)
     for entry in created:
         db.refresh(entry)

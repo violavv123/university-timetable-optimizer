@@ -8,14 +8,23 @@ from typing import Any
 
 from app.seeds.catalog import (
     ACTIVE_PROGRAMS as CATALOG_ACTIVE_PROGRAMS,
+)
+from app.seeds.catalog import (
     CO_LECTURERS as CATALOG_CO_LECTURERS,
+)
+from app.seeds.catalog import (
     COURSE_SPECS as CATALOG_COURSE_SPECS,
+)
+from app.seeds.catalog import (
     ELECTIVE_GROUP_SPECS as CATALOG_ELECTIVE_GROUP_SPECS,
+)
+from app.seeds.catalog import (
     STAFF_SPECS as CATALOG_STAFF_SPECS,
 )
 
 SeedRow = dict[str, Any]
 TERM_KEY = "2026/2027-SUMMER"
+WINTER_TERM_KEY = "2026/2027-WINTER"
 
 FACULTIES: list[SeedRow] = [
     {
@@ -86,7 +95,7 @@ ACADEMIC_YEARS: list[SeedRow] = [
 
 ACADEMIC_TERMS: list[SeedRow] = [
     {
-        "key": "2026/2027-WINTER",
+        "key": WINTER_TERM_KEY,
         "academic_year_key": "2026/2027",
         "name": "Semestri dimëror 2026/2027",
         "term_type": "WINTER",
@@ -264,6 +273,13 @@ for _staff_index, _staff_row in enumerate(STAFF_MEMBERS):
             )
 
 _ACTIVE_PROGRAMS = dict(CATALOG_ACTIVE_PROGRAMS)
+# The summer fixture remains the complete generation benchmark. Winter uses a
+# smaller but real offering set so the term can be selected and generated
+# without doubling the largest benchmark dataset.
+_WINTER_ACTIVE_PROGRAMS = {
+    "TIK-BSC-S4": _ACTIVE_PROGRAMS["TIK-BSC-S4"],
+    "TIK-MSC-S2": _ACTIVE_PROGRAMS["TIK-MSC-S2"],
+}
 
 MAX_LECTURE_STUDENTS = 60
 MAX_NUMERICAL_STUDENTS = 40
@@ -877,6 +893,105 @@ for _curriculum in CURRICULUM_COURSES:
             ]
             _dependency(_lecture_session, _child_session, "PRECEDES")
 
+
+def _clone_winter_fixture() -> None:
+    """Add a coherent, smaller winter offering beside the summer fixture."""
+
+    selected_semesters = set(_WINTER_ACTIVE_PROGRAMS)
+    group_keys: dict[str, str] = {}
+    for row in tuple(STUDENT_GROUPS):
+        if row["program_semester_key"] not in selected_semesters:
+            continue
+        winter_key = f"{row['key']}:WINTER"
+        group_keys[row["key"]] = winter_key
+        winter_row = dict(row)
+        winter_row["key"] = winter_key
+        winter_row["academic_term_key"] = WINTER_TERM_KEY
+        if winter_row["parent_group_key"] is not None:
+            winter_row["parent_group_key"] = group_keys[winter_row["parent_group_key"]]
+        STUDENT_GROUPS.append(winter_row)
+        _GROUP_PARENT[winter_key] = winter_row["parent_group_key"]
+        _GROUP_SIZE[winter_key] = winter_row["student_count"]
+
+    for rows in (STAFF_AVAILABILITY, ROOM_AVAILABILITY):
+        for row in tuple(rows):
+            if row["academic_term_key"] != TERM_KEY:
+                continue
+            winter_row = dict(row)
+            winter_row["key"] = f"{row['key']}:WINTER"
+            winter_row["academic_term_key"] = WINTER_TERM_KEY
+            rows.append(winter_row)
+
+    offering_keys: dict[str, str] = {}
+    for row in tuple(COURSE_OFFERINGS):
+        semester_key = row["curriculum_course_key"].split(":", maxsplit=1)[0]
+        if semester_key not in selected_semesters:
+            continue
+        winter_key = f"{row['key']}:WINTER"
+        offering_keys[row["key"]] = winter_key
+        winter_row = dict(row)
+        winter_row["key"] = winter_key
+        winter_row["academic_term_key"] = WINTER_TERM_KEY
+        COURSE_OFFERINGS.append(winter_row)
+
+    session_keys: dict[str, str] = {}
+    for row in tuple(COURSE_SESSIONS):
+        winter_offering_key = offering_keys.get(row["course_offering_key"])
+        if winter_offering_key is None:
+            continue
+        winter_key = f"{row['key']}:WINTER"
+        session_keys[row["key"]] = winter_key
+        winter_row = dict(row)
+        winter_row["key"] = winter_key
+        winter_row["course_offering_key"] = winter_offering_key
+        COURSE_SESSIONS.append(winter_row)
+
+    for row in tuple(COURSE_SESSION_GROUPS):
+        winter_session_key = session_keys.get(row["course_session_key"])
+        winter_group_key = group_keys.get(row["student_group_key"])
+        if winter_session_key is None or winter_group_key is None:
+            continue
+        winter_row = dict(row)
+        winter_row["key"] = f"{winter_session_key}:{winter_group_key}"
+        winter_row["course_session_key"] = winter_session_key
+        winter_row["student_group_key"] = winter_group_key
+        COURSE_SESSION_GROUPS.append(winter_row)
+
+    for row in tuple(COURSE_SESSION_STAFF):
+        winter_session_key = session_keys.get(row["course_session_key"])
+        if winter_session_key is None:
+            continue
+        winter_row = dict(row)
+        winter_row["key"] = f"{winter_session_key}:{row['staff_member_key']}"
+        winter_row["course_session_key"] = winter_session_key
+        COURSE_SESSION_STAFF.append(winter_row)
+
+    for row in tuple(COURSE_SESSION_TIME_CONSTRAINTS):
+        winter_session_key = session_keys.get(row["course_session_key"])
+        if winter_session_key is None:
+            continue
+        winter_row = dict(row)
+        winter_row["key"] = f"{winter_session_key}:{row['key'].rsplit(':', maxsplit=1)[-1]}"
+        winter_row["course_session_key"] = winter_session_key
+        COURSE_SESSION_TIME_CONSTRAINTS.append(winter_row)
+
+    for row in tuple(COURSE_SESSION_DEPENDENCIES):
+        winter_predecessor = session_keys.get(row["predecessor_session_key"])
+        winter_successor = session_keys.get(row["successor_session_key"])
+        if winter_predecessor is None or winter_successor is None:
+            continue
+        winter_row = dict(row)
+        winter_row["key"] = (
+            f"{winter_predecessor}>{winter_successor}:"
+            f"{row['dependency_type']}"
+        )
+        winter_row["predecessor_session_key"] = winter_predecessor
+        winter_row["successor_session_key"] = winter_successor
+        COURSE_SESSION_DEPENDENCIES.append(winter_row)
+
+
+_clone_winter_fixture()
+
 def validate_seed_data() -> None:
     """Validate schema-level and solver-critical invariants before any insert."""
 
@@ -1200,11 +1315,17 @@ def validate_seed_data() -> None:
     def validate_weekly_coverage(
         rows: list[SeedRow], resource_field: str, expected_resources: set[str]
     ) -> None:
-        windows: dict[tuple[str, int], list[SeedRow]] = defaultdict(list)
+        windows: dict[tuple[str, str, int], list[SeedRow]] = defaultdict(list)
         for row in rows:
-            windows[(row[resource_field], row["day_of_week"])].append(row)
+            windows[
+                (row["academic_term_key"], row[resource_field], row["day_of_week"])
+            ].append(row)
+        term_keys = {row["academic_term_key"] for row in rows}
         expected = {
-            (resource_key, day) for resource_key in expected_resources for day in range(1, 6)
+            (term_key, resource_key, day)
+            for term_key in term_keys
+            for resource_key in expected_resources
+            for day in range(1, 6)
         }
         if set(windows) != expected:
             raise ValueError(f"Incomplete weekly availability for {resource_field}")

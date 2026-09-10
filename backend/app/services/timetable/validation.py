@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import time
+from itertools import combinations
 from typing import Any, cast
 
 from app.models.course import Course
@@ -690,63 +691,13 @@ def collect_entry_conflicts(
         entry_id=exclude_entry_id,
         conflicts=conflicts,
     )
-    session = resolved.session
-    if occurrence_number <= 0 or occurrence_number > session.weekly_frequency:
-        _append_conflict(
-            conflicts,
-            "INVALID_OCCURRENCE_NUMBER",
-            "occurrence_number must be between 1 and weekly_frequency.",
-            entry_id=exclude_entry_id,
-            occurrence_number=occurrence_number,
-            weekly_frequency=session.weekly_frequency,
-        )
-    _validate_room(
-        resolved=resolved,
-        conflicts=conflicts,
-        entry_id=exclude_entry_id,
-    )
-    _validate_session_assignments(
+    _collect_intrinsic_conflicts(
         db,
         resolved=resolved,
+        occurrence_number=occurrence_number,
         conflicts=conflicts,
         entry_id=exclude_entry_id,
     )
-    _validate_session_time_constraints(
-        db,
-        resolved=resolved,
-        conflicts=conflicts,
-        entry_id=exclude_entry_id,
-    )
-    for staff_member_id in resolved.staff_ids:
-        _validate_availability(
-            db,
-            model_type=StaffAvailability,
-            owner_field=StaffAvailability.staff_member_id,
-            owner_id=staff_member_id,
-            academic_term_id=resolved.run.academic_term_id,
-            day_of_week=resolved.start_slot.day_of_week,
-            start_time=resolved.start_slot.start_time,
-            end_time=resolved.end_time,
-            resource_code="STAFF",
-            resource_label="staff",
-            entry_id=exclude_entry_id,
-            conflicts=conflicts,
-        )
-    _validate_availability(
-        db,
-        model_type=RoomAvailability,
-        owner_field=RoomAvailability.room_id,
-        owner_id=resolved.room.id,
-        academic_term_id=resolved.run.academic_term_id,
-        day_of_week=resolved.start_slot.day_of_week,
-        start_time=resolved.start_slot.start_time,
-        end_time=resolved.end_time,
-        resource_code="ROOM",
-        resource_label="room",
-        entry_id=exclude_entry_id,
-        conflicts=conflicts,
-    )
-
     statement = select(TimetableEntry).where(TimetableEntry.timetable_run_id == timetable_run_id)
     if exclude_entry_id is not None:
         statement = statement.where(TimetableEntry.id != exclude_entry_id)
@@ -798,6 +749,137 @@ def collect_entry_conflicts(
                 entry_ids=pair,
             )
     return tuple(conflicts)
+
+
+def _collect_intrinsic_conflicts(
+    db: Session,
+    *,
+    resolved: _ResolvedAssignment,
+    occurrence_number: int,
+    conflicts: list[TimetableConflict],
+    entry_id: int | None,
+) -> None:
+    session = resolved.session
+    if occurrence_number <= 0 or occurrence_number > session.weekly_frequency:
+        _append_conflict(
+            conflicts,
+            "INVALID_OCCURRENCE_NUMBER",
+            "occurrence_number must be between 1 and weekly_frequency.",
+            entry_id=entry_id,
+            occurrence_number=occurrence_number,
+            weekly_frequency=session.weekly_frequency,
+        )
+    _validate_room(
+        resolved=resolved,
+        conflicts=conflicts,
+        entry_id=entry_id,
+    )
+    _validate_session_assignments(
+        db,
+        resolved=resolved,
+        conflicts=conflicts,
+        entry_id=entry_id,
+    )
+    _validate_session_time_constraints(
+        db,
+        resolved=resolved,
+        conflicts=conflicts,
+        entry_id=entry_id,
+    )
+    for staff_member_id in resolved.staff_ids:
+        _validate_availability(
+            db,
+            model_type=StaffAvailability,
+            owner_field=StaffAvailability.staff_member_id,
+            owner_id=staff_member_id,
+            academic_term_id=resolved.run.academic_term_id,
+            day_of_week=resolved.start_slot.day_of_week,
+            start_time=resolved.start_slot.start_time,
+            end_time=resolved.end_time,
+            resource_code="STAFF",
+            resource_label="staff",
+            entry_id=entry_id,
+            conflicts=conflicts,
+        )
+    _validate_availability(
+        db,
+        model_type=RoomAvailability,
+        owner_field=RoomAvailability.room_id,
+        owner_id=resolved.room.id,
+        academic_term_id=resolved.run.academic_term_id,
+        day_of_week=resolved.start_slot.day_of_week,
+        start_time=resolved.start_slot.start_time,
+        end_time=resolved.end_time,
+        resource_code="ROOM",
+        resource_label="room",
+        entry_id=entry_id,
+        conflicts=conflicts,
+    )
+
+
+def _collect_resource_overlap_conflicts(
+    db: Session,
+    *,
+    resolved_by_entry: dict[int, _ResolvedAssignment],
+    conflicts: list[TimetableConflict],
+) -> None:
+    room_usage: dict[tuple[int, int], set[int]] = {}
+    staff_usage: dict[tuple[int, int], set[int]] = {}
+    student_usage: dict[int, list[tuple[int, frozenset[int]]]] = {}
+    ancestor_cache: dict[int, set[int]] = {}
+
+    for entry_id, resolved in resolved_by_entry.items():
+        for slot in resolved.slots:
+            room_usage.setdefault((resolved.room.id, slot.id), set()).add(entry_id)
+            for staff_id in resolved.staff_ids:
+                staff_usage.setdefault((staff_id, slot.id), set()).add(entry_id)
+            student_usage.setdefault(slot.id, []).append((entry_id, resolved.group_ids))
+
+    for (room_id, _), entry_ids in room_usage.items():
+        for first_id, second_id in combinations(sorted(entry_ids), 2):
+            _append_conflict(
+                conflicts,
+                "ROOM_OVERLAP",
+                "A room cannot host overlapping entries in one run.",
+                entry_ids=(first_id, second_id),
+                room_id=room_id,
+            )
+    for (staff_id, _), entry_ids in staff_usage.items():
+        for first_id, second_id in combinations(sorted(entry_ids), 2):
+            _append_conflict(
+                conflicts,
+                "STAFF_OVERLAP",
+                "Staff cannot teach overlapping entries in one run.",
+                entry_ids=(first_id, second_id),
+                staff_member_ids=[staff_id],
+            )
+    for entries_at_slot in student_usage.values():
+        for (first_id, first_groups), (second_id, second_groups) in combinations(
+            entries_at_slot,
+            2,
+        ):
+            if not first_groups or not second_groups:
+                continue
+            all_group_ids = first_groups | second_groups
+            for group_id in all_group_ids:
+                if group_id not in ancestor_cache:
+                    ancestor_cache[group_id] = _group_ancestor_ids(db, group_id)
+            has_group_conflict = bool(first_groups.intersection(second_groups)) or any(
+                group_id in ancestor_cache[other_group_id]
+                for group_id in first_groups
+                for other_group_id in second_groups
+            ) or any(
+                group_id in ancestor_cache[other_group_id]
+                for group_id in second_groups
+                for other_group_id in first_groups
+            )
+            if has_group_conflict:
+                _append_conflict(
+                    conflicts,
+                    "STUDENT_GROUP_OVERLAP",
+                    "The same or an ancestor/descendant group cannot overlap.",
+                    entry_ids=(first_id, second_id),
+                )
 
 
 def _expected_sessions(
@@ -958,22 +1040,33 @@ def validate_timetable_run(
             )
         ).all()
     )
+    resolved_by_entry: dict[int, _ResolvedAssignment] = {}
     for entry in entries:
-        for conflict in collect_entry_conflicts(
+        entry_conflicts: list[TimetableConflict] = []
+        resolved = _resolve_assignment(
             db,
             timetable_run_id=entry.timetable_run_id,
             course_session_id=entry.course_session_id,
-            occurrence_number=entry.occurrence_number,
             room_id=entry.room_id,
             start_slot_id=entry.start_slot_id,
-            exclude_entry_id=entry.id,
-        ):
-            _append_conflict(
-                conflicts,
-                conflict.code,
-                conflict.message,
-                **conflict.details,
-            )
+            entry_id=entry.id,
+            conflicts=entry_conflicts,
+        )
+        resolved_by_entry[entry.id] = resolved
+        conflicts.extend(entry_conflicts)
+        _collect_intrinsic_conflicts(
+            db,
+            resolved=resolved,
+            occurrence_number=entry.occurrence_number,
+            conflicts=conflicts,
+            entry_id=entry.id,
+        )
+
+    _collect_resource_overlap_conflicts(
+        db,
+        resolved_by_entry=resolved_by_entry,
+        conflicts=conflicts,
+    )
 
     expected_sessions = _expected_sessions(db, run)
     expected_occurrences = sum(session.weekly_frequency for session in expected_sessions)

@@ -41,6 +41,13 @@ export interface StudyProgram {
   is_active: boolean;
 }
 
+export interface Level {
+  id: Id;
+  code: string;
+  name: string;
+  is_active: boolean;
+}
+
 export interface Course {
   id: Id;
   code: string;

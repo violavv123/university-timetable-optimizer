@@ -28,8 +28,8 @@ const initialForm: GenerationRequest = {
   name: "",
   algorithm: "HYBRID",
   parameters: {
-    time_limit_seconds: 30,
-    num_search_workers: 8,
+    time_limit_seconds: 0,
+    num_search_workers: 2,
     random_seed: 0,
     spread_repeated_occurrences: true,
     unused_seat_weight: 1,
@@ -114,9 +114,9 @@ export function GeneratePage() {
                 <Icon name="chevron" className={advancedOpen ? "rotate" : ""} />
               </button>
               {advancedOpen && <div className="form-grid advanced-fields">
-                <label className="field"><span>Search workers</span><input type="text" inputMode="numeric" pattern="[0-9]*" value={form.parameters.num_search_workers} disabled={isRunning} onChange={(event) => { const value = event.target.value.replace(/\D/g, ""); setForm({ ...form, parameters: { ...form.parameters, num_search_workers: value ? Math.min(8, Number(value)) : 0 } }); }} /><small>Parallel CP-SAT workers (maximum 8).</small></label>
-                <label className="field"><span>Random seed</span><input type="number" min="0" step="1" value={form.parameters.random_seed} disabled={isRunning} onChange={(event) => setForm({ ...form, parameters: { ...form.parameters, random_seed: Number(event.target.value) } })} /></label>
-                <label className="field"><span>Unused-seat weight</span><input type="number" min="0" step="1" value={form.parameters.unused_seat_weight} disabled={isRunning} onChange={(event) => setForm({ ...form, parameters: { ...form.parameters, unused_seat_weight: Number(event.target.value) } })} /></label>
+                <label className="field"><span>Search workers</span><input type="text" inputMode="numeric" pattern="[0-9]*" value={form.parameters.num_search_workers} disabled={isRunning} onChange={(event) => { const value = event.target.value.replace(/\D/g, ""); setForm({ ...form, parameters: { ...form.parameters, num_search_workers: value ? Math.min(2, Number(value)) : 0 } }); }} /><small>Parallel CP-SAT workers (maximum 2).</small></label>
+                <label className="field"><span>Random seed</span><input type="number" min="0" step="1" value={form.parameters.random_seed} disabled={isRunning} onChange={(event) => setForm({ ...form, parameters: { ...form.parameters, random_seed: Number(event.target.value) } })} /><small>Same seed repeats choices; change it for another variation.</small></label>
+                <label className="field"><span>Unused-seat weight</span><input type="number" min="0" step="1" value={form.parameters.unused_seat_weight} disabled={isRunning} onChange={(event) => setForm({ ...form, parameters: { ...form.parameters, unused_seat_weight: Number(event.target.value) } })} /><small>Penalty for empty room seats; higher values prefer tighter room fits.</small></label>
                 <label className="check-field"><input type="checkbox" checked={form.parameters.spread_repeated_occurrences} disabled={isRunning} onChange={(event) => setForm({ ...form, parameters: { ...form.parameters, spread_repeated_occurrences: event.target.checked } })} /><span><strong>Spread repeated sessions</strong><small>Prefer different teaching days for repeated sessions.</small></span></label>
                 <label className="check-field"><input type="checkbox" checked={form.parameters.log_search_progress} disabled={isRunning} onChange={(event) => setForm({ ...form, parameters: { ...form.parameters, log_search_progress: event.target.checked } })} /><span><strong>Log solver progress</strong><small>Print CP-SAT diagnostics in the backend terminal.</small></span></label>
               </div>}
@@ -124,7 +124,7 @@ export function GeneratePage() {
           </section>
         </div>
 
-        <aside className="run-summary panel"><p className="eyebrow">{isRunning ? "Generation status" : generation.status === "succeeded" ? "Timetable ready" : "Run summary"}</p><h2>{isRunning ? "Generating timetable" : generation.status === "succeeded" ? "Review your timetable" : "Ready to optimize"}</h2>{isRunning && <div className="generation-progress" aria-live="polite"><div className="generation-progress__time"><div><strong>{formatElapsed(generation.elapsedSeconds)}</strong><span>elapsed</span></div></div></div>}<dl><div><dt>Faculty</dt><dd>{selectedFaculty?.code ?? "Not selected"}</dd></div><div><dt>Academic term</dt><dd>{selectedTerm?.name ?? "Not selected"}</dd></div><div><dt>Profile</dt><dd>{selectedProfile?.name ?? "Not selected"}</dd></div><div><dt>Algorithm</dt><dd>{humanize(form.algorithm)}</dd></div></dl><Button type="submit" disabled={!canSubmit}>{isRunning ? "Generating timetable…" : <><Icon name="play" /> Generate timetable</>}</Button></aside>
+        <aside className="run-summary panel"><p className="eyebrow">{isRunning ? "Generation status" : generation.status === "succeeded" ? "Timetable ready" : "Run summary"}</p><h2>{isRunning ? "Generating timetable" : generation.status === "succeeded" ? "Review your timetable" : "Ready to optimize"}</h2>{isRunning && <div className="generation-progress" aria-live="polite"><div className="generation-progress__time"><div><strong>{formatElapsed(generation.elapsedSeconds)}</strong><span>elapsed</span></div></div></div>}<dl><div><dt>Faculty</dt><dd>{selectedFaculty?.code ?? "Not selected"}</dd></div><div><dt>Academic term</dt><dd>{selectedTerm?.name ?? "Not selected"}</dd></div><div><dt>Profile</dt><dd>{selectedProfile?.name ?? "Not selected"}</dd></div><div><dt>Algorithm</dt><dd>{humanize(form.algorithm)}</dd></div></dl>{isRunning ? <Button type="button" variant="danger" onClick={generation.abortGeneration}>Abort generation</Button> : <Button type="submit" disabled={!canSubmit}><Icon name="play" /> Generate timetable</Button>}</aside>
       </form>
 
       {generation.status === "succeeded" && generation.results[0] && <section className="single-result panel"><div><p className="eyebrow">Generation complete</p><h2>{generation.results[0].name}</h2><p>{humanize(generation.results[0].algorithm ?? form.algorithm)} · {formatRuntime(generation.results[0].execution_time_ms)} · {generation.results[0].hard_conflicts} hard conflicts</p></div><Button type="button" onClick={() => navigate(`/runs/${generation.results[0].id}`, { state: { justGenerated: true } })}>Review timetable</Button></section>}

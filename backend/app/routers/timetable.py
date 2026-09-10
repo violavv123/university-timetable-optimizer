@@ -1,9 +1,11 @@
 from datetime import time
 from typing import Any
 
+from app.database import SessionLocal
 from app.models.enums import DayOfWeek, TimetableRunStatus, TimetableSourceType
 from app.routers.crud import register_crud_routes
 from app.routers.dependencies import DbSession, TimetableSolverDependency
+from app.scheduling.solver_factory import DatabaseConfiguredTimetableSolver
 from app.schemas.scheduler import SchedulingConflictRead, TimetableGenerationRequest
 from app.schemas.scheduler import TimetableValidationResult as TimetableValidationResponse
 from app.schemas.timetable_entry import (
@@ -14,18 +16,52 @@ from app.schemas.timetable_entry import (
 )
 from app.schemas.timetable_run import TimetableRunCreate, TimetableRunRead, TimetableRunUpdate
 from app.services.timetable import timetable_entry, timetable_run
-from app.services.timetable.export import (
-    export_published_timetable_csv,
-)
+from app.services.timetable.export import export_timetable_csv
 from app.services.timetable.generation import generate_timetable
 from app.services.timetable.publication import publish_timetable_run, unpublish_timetable_run
 from app.services.timetable.reoptimization import prepare_reoptimized_run
 from app.services.timetable.types import TimetableConflict
 from app.services.timetable.validation import validate_timetable_run
-from fastapi import APIRouter, Path, Response
+from fastapi import APIRouter, BackgroundTasks, Path, Response
 from pydantic import BaseModel, ConfigDict, Field
 
 router = APIRouter(prefix="/timetables", tags=["Timetables"])
+_active_generation_solvers: dict[int, DatabaseConfiguredTimetableSolver] = {}
+
+
+def _run_generation_in_background(timetable_run_id: int) -> None:
+    """Solve a run without holding the HTTP request open."""
+    db = SessionLocal()
+    try:
+        run = timetable_run.get_timetable_run(db, timetable_run_id)
+        if run.status != TimetableRunStatus.PENDING:
+            return
+        solver = DatabaseConfiguredTimetableSolver()
+        _active_generation_solvers[timetable_run_id] = solver
+        try:
+            generate_timetable(db, timetable_run_id, solver)
+        finally:
+            _active_generation_solvers.pop(timetable_run_id, None)
+    except Exception:
+        # generate_timetable records RUNNING failures itself. A cancelled run
+        # is intentionally left CANCELLED when the worker notices the cancel.
+        db.rollback()
+        try:
+            failed_run = timetable_run.get_timetable_run(db, timetable_run_id)
+            if failed_run.status in {
+                TimetableRunStatus.PENDING,
+                TimetableRunStatus.RUNNING,
+            }:
+                failed_run.status = TimetableRunStatus.FAILED
+                db.commit()
+        except Exception:
+            db.rollback()
+    finally:
+        db.close()
+
+
+def _queue_generation(background_tasks: BackgroundTasks, timetable_run_id: int) -> None:
+    background_tasks.add_task(_run_generation_in_background, timetable_run_id)
 
 
 class TimetableRunFilters(BaseModel):
@@ -86,6 +122,7 @@ def create_and_generate_run(
     payload: TimetableGenerationRequest,
     db: DbSession,
     solver: TimetableSolverDependency,
+    background_tasks: BackgroundTasks,
 ) -> Any:
     run = timetable_run.create_timetable_run(
         db,
@@ -98,7 +135,12 @@ def create_and_generate_run(
             parameters=payload.parameters.model_dump(),
         ),
     )
-    return generate_timetable(db, run.id, solver)
+    # Keep the dependency in the signature for backwards-compatible route
+    # overrides/tests; the worker creates a fresh configured solver and DB
+    # session after this response has been returned.
+    del solver
+    _queue_generation(background_tasks, run.id)
+    return run
 
 
 def _positive_ids(details: dict[str, Any], singular: str, plural: str) -> list[int]:
@@ -157,10 +199,12 @@ def _conflict_response(conflict: TimetableConflict) -> SchedulingConflictRead:
 )
 def generate_run(
     db: DbSession,
-    solver: TimetableSolverDependency,
+    background_tasks: BackgroundTasks,
     timetable_run_id: int = Path(..., gt=0),
 ) -> Any:
-    return generate_timetable(db, timetable_run_id, solver)
+    run = timetable_run.get_timetable_run(db, timetable_run_id)
+    _queue_generation(background_tasks, run.id)
+    return run
 
 
 @router.post(
@@ -172,7 +216,11 @@ def cancel_run(
     db: DbSession,
     timetable_run_id: int = Path(..., gt=0),
 ) -> Any:
-    return timetable_run.cancel_timetable_run(db, timetable_run_id)
+    cancelled = timetable_run.cancel_timetable_run(db, timetable_run_id)
+    solver = _active_generation_solvers.get(timetable_run_id)
+    if solver is not None:
+        solver.cancel()
+    return cancelled
 
 
 @router.post(
@@ -220,13 +268,13 @@ def validate_run(
 @router.get(
     "/runs/{timetable_run_id}/download",
     response_class=Response,
-    summary="Download a published timetable as CSV",
+    summary="Download a successful timetable as CSV",
 )
 def download_timetable(
     db: DbSession,
     timetable_run_id: int = Path(..., gt=0),
 ) -> Response:
-    filename, csv_content = export_published_timetable_csv(
+    filename, csv_content = export_timetable_csv(
         db,
         timetable_run_id,
     )

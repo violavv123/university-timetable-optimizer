@@ -1,9 +1,13 @@
+from app.core.security import require_admin
 from app.main import app
 from app.routers.dependencies import get_timetable_solver
+from app.routers.timetable import _queue_generation
 from app.scheduling.solver_factory import DatabaseConfiguredTimetableSolver
+from app.schemas.auth import CurrentUserRead
 from fastapi.testclient import TestClient
 
 client = TestClient(app, raise_server_exceptions=False)
+app.dependency_overrides[require_admin] = lambda: CurrentUserRead(username="test-admin")
 
 
 def test_health_endpoint_is_available() -> None:
@@ -74,3 +78,16 @@ def test_generation_endpoint_uses_configured_solver_dependency() -> None:
     solver = get_timetable_solver()
 
     assert isinstance(solver, DatabaseConfiguredTimetableSolver)
+
+
+def test_generation_is_queued_instead_of_run_in_the_request() -> None:
+    queued: list[tuple[object, tuple[object, ...]]] = []
+
+    class FakeBackgroundTasks:
+        def add_task(self, function: object, *args: object) -> None:
+            queued.append((function, args))
+
+    background_tasks = FakeBackgroundTasks()
+    _queue_generation(background_tasks, 42)  # type: ignore[arg-type]
+
+    assert queued[0][1] == (42,)

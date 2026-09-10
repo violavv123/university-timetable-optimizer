@@ -10,15 +10,48 @@ from app.services.timetable.validation import validate_timetable_run
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+CSV_HEADER = [
+    "Course code",
+    "Course name",
+    "Session",
+    "Component",
+    "Occurrence",
+    "Day",
+    "Start time",
+    "End time",
+    "Room",
+    "Student groups",
+    "Staff",
+]
 
-def export_published_timetable_csv(
+
+def _group_entries_by_program_and_level(
+    entries: tuple[TimetableEntry, ...],
+) -> list[tuple[tuple[str, str], list[TimetableEntry]]]:
+    sections: dict[tuple[str, str], list[TimetableEntry]] = {}
+    for entry in entries:
+        curriculum = entry.course_session.course_offering.curriculum_course
+        program = curriculum.program_semester.study_program
+        level = program.level
+        section_key = (
+            f"{program.code} — {program.name}",
+            f"{level.code} — {level.name}",
+        )
+        sections.setdefault(section_key, []).append(entry)
+    return sorted(
+        sections.items(),
+        key=lambda item: (item[0][0].casefold(), item[0][1].casefold()),
+    )
+
+
+def export_timetable_csv(
     db: Session,
     timetable_run_id: int,
 ) -> tuple[str, str]:
     run = get_timetable_run(db, timetable_run_id)
 
-    if run.status != TimetableRunStatus.SUCCEEDED or not run.is_published:
-        raise TimetablePublishError("Only a successful published timetable can be downloaded.")
+    if run.status != TimetableRunStatus.SUCCEEDED:
+        raise TimetablePublishError("Only a successfully generated timetable can be downloaded.")
 
     validation = validate_timetable_run(db, run.id)
     if not validation.is_valid:
@@ -53,56 +86,47 @@ def export_published_timetable_csv(
     output = StringIO(newline="")
     writer = csv.writer(output)
 
-    writer.writerow(
-        [
-            "Course code",
-            "Course name",
-            "Session",
-            "Component",
-            "Occurrence",
-            "Day",
-            "Start time",
-            "End time",
-            "Room",
-            "Student groups",
-            "Staff",
-        ]
-    )
-
-    for entry in entries:
-        session = entry.course_session
-        course = session.course_offering.curriculum_course.course
-        start_slot = entry.start_slot
-        end_slot = slot_by_position[
-            (
-                start_slot.day_of_week,
-                start_slot.slot_index + session.duration_slots - 1,
-            )
-        ]
-
-        groups = ", ".join(
-            assignment.student_group.name for assignment in session.group_assignments
-        )
-        staff = ", ".join(
-            (f"{assignment.staff_member.first_name} {assignment.staff_member.last_name}")
-            for assignment in session.staff_assignments
-        )
-
-        writer.writerow(
-            [
-                course.code,
-                course.name,
-                session.name,
-                session.component_type.value,
-                entry.occurrence_number,
-                DayOfWeek(start_slot.day_of_week).name.title(),
-                start_slot.start_time.isoformat(timespec="minutes"),
-                end_slot.end_time.isoformat(timespec="minutes"),
-                entry.room.code,
-                groups,
-                staff,
+    sections = _group_entries_by_program_and_level(entries)
+    for (program_label, level_label), section_entries in sections:
+        writer.writerow([f"Department / program: {program_label}"])
+        writer.writerow([f"Study level: {level_label}"])
+        writer.writerow(CSV_HEADER)
+        for entry in section_entries:
+            session = entry.course_session
+            curriculum = session.course_offering.curriculum_course
+            course = curriculum.course
+            start_slot = entry.start_slot
+            end_slot = slot_by_position[
+                (
+                    start_slot.day_of_week,
+                    start_slot.slot_index + session.duration_slots - 1,
+                )
             ]
-        )
+
+            groups = ", ".join(
+                assignment.student_group.name for assignment in session.group_assignments
+            )
+            staff = ", ".join(
+                (f"{assignment.staff_member.first_name} {assignment.staff_member.last_name}")
+                for assignment in session.staff_assignments
+            )
+
+            writer.writerow(
+                [
+                    course.code,
+                    course.name,
+                    session.name,
+                    session.component_type.value,
+                    entry.occurrence_number,
+                    DayOfWeek(start_slot.day_of_week).name.title(),
+                    start_slot.start_time.isoformat(timespec="minutes"),
+                    end_slot.end_time.isoformat(timespec="minutes"),
+                    entry.room.code,
+                    groups,
+                    staff,
+                ]
+            )
+        writer.writerow([])
 
     filename = f"timetable-run-{run.id}.csv"
     return filename, output.getvalue()

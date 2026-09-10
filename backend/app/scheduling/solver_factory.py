@@ -24,11 +24,24 @@ def get_timetable_solver(algorithm: SchedulingAlgorithm) -> TimetableSolver:
 class DatabaseConfiguredTimetableSolver:
     """Select the concrete engine from the persisted run configuration."""
 
+    def __init__(self) -> None:
+        self._active_solver: TimetableSolver | None = None
+
     def __call__(self, db: Session, run: TimetableRun) -> SolverOutcome:
         if run.algorithm is None:
             raise ValueError("Generated timetable runs require an algorithm.")
         solver = get_timetable_solver(run.algorithm)
-        return solver(db, run)
+        self._active_solver = solver
+        try:
+            return solver(db, run)
+        finally:
+            self._active_solver = None
+
+    def cancel(self) -> None:
+        solver = self._active_solver
+        cancel = getattr(solver, "cancel", None)
+        if cancel is not None:
+            cancel()
 
 
 __all__ = ["DatabaseConfiguredTimetableSolver", "get_timetable_solver"]

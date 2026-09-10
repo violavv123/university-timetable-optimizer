@@ -20,12 +20,17 @@
 .switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 12px; height: 12px; border-radius: 50%; background: white; box-shadow: 0 1px 3px rgba(0,0,0,.14); transition: .15s; }
 .switch-label input:checked + .switch { background: var(--green-600, #39826c); }
 .switch-label input:checked + .switch::after { transform: translateX(14px); }
-.timetable-legend { display: flex; align-items: center; gap: 14px; margin-left: auto; color: #7d8984; font-size: 9px; }
+.timetable-legend { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 14px; margin-left: auto; color: #7d8984; font-size: 9px; }
 .timetable-legend span { display: flex; align-items: center; gap: 5px; }
 .legend-dot { width: 6px; height: 6px; border-radius: 50%; }
 .legend-dot--green { background: #54a883; }
+.legend-dot--red { background: #c96b6b; }
+.legend-dot--blue { background: #5c8fc4; }
 .legend-dot--purple { background: #927abb; }
 .legend-dot--gold { background: #d7a74d; }
+.legend-dot--teal { background: #3eaaa4; }
+.legend-dot--pink { background: #c77ca5; }
+.legend-dot--slate { background: #718096; }
 .timetable-scroll { margin-top: 16px; overflow-x: auto; }
 .timetable { --days: 5; --rows: 8; min-width: calc(var(--days) * 190px + 64px); display: grid; grid-template-columns: 64px repeat(var(--days), minmax(175px, 1fr)); grid-template-rows: 47px auto; }
 .timetable__corner, .timetable__day { border-bottom: 1px solid #dfe5e1; }
@@ -43,8 +48,13 @@
 .schedule-card { z-index: 2; min-height: 72px; border: 0; border-left: 3px solid; border-radius: 7px; display: flex; flex-direction: column; align-items: stretch; margin: 4px; padding: 8px 9px; overflow: hidden; text-align: left; transition: transform .12s ease, box-shadow .12s ease; grid-column: 1; }
 .schedule-card:hover { z-index: 3; transform: translateY(-1px); box-shadow: 0 5px 14px rgba(31, 59, 50, .13); }
 .schedule-card--green { border-color: #4d9f7d; color: #315b4c; background: #e5f3ec; }
+.schedule-card--red { border-color: #c96b6b; color: #7a3535; background: #f9e6e6; }
+.schedule-card--blue { border-color: #5c8fc4; color: #2f5c86; background: #e8f1fa; }
 .schedule-card--purple { border-color: #8971b0; color: #59477c; background: #eee9f6; }
 .schedule-card--gold { border-color: #cf9d40; color: #775b23; background: #f9efd9; }
+.schedule-card--teal { border-color: #3eaaa4; color: #246d69; background: #e1f4f2; }
+.schedule-card--pink { border-color: #c77ca5; color: #7d3f61; background: #f8e7f0; }
+.schedule-card--slate { border-color: #718096; color: #455468; background: #edf1f5; }
 .schedule-card--locked { position: relative; }
 .schedule-card--locked::after { content: ""; position: absolute; inset: 0; border: 1px dashed currentColor; border-radius: 7px; pointer-events: none; opacity: .28; }
 .schedule-card__time { margin-bottom: 4px; opacity: .72; font-size: 8px; font-weight: 700; }

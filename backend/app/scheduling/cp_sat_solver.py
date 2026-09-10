@@ -31,9 +31,8 @@ from app.services.timetable.types import SolverOutcome, TimetableAssignment
 from ortools.sat.python import cp_model
 from sqlalchemy.orm import Session
 
-MAX_SOLVER_TIME_SECONDS = 60.0
-MAX_SEARCH_WORKERS = 8
-HYBRID_GREEDY_FAST_PATH_OCCURRENCES = 80
+MAX_SEARCH_WORKERS = 2
+FAST_PATH_OCCURRENCE_COUNT = 40
 
 # `solver.parameters.max_time_in_seconds` only bounds the CP-SAT search
 # itself. Building the model - in particular the per-occurrence
@@ -45,7 +44,7 @@ HYBRID_GREEDY_FAST_PATH_OCCURRENCES = 80
 # regardless of the solver time limit. If the input is that large, skip
 # building the CP-SAT model altogether and fall back to the much cheaper
 # greedy solver so a single result is still produced quickly.
-MAX_ALLOWED_PAIRS_FOR_CP_SAT = 20_000
+MAX_ALLOWED_PAIRS_FOR_CP_SAT = 5_000
 
 
 @dataclass(slots=True)
@@ -68,8 +67,8 @@ def _safe_name(occurrence: SessionOccurrence) -> str:
 
 
 def _filtered_options(
-        data: SchedulingInput,
-        occurrence: SessionOccurrence,
+    data: SchedulingInput,
+    occurrence: SessionOccurrence,
 ) -> tuple[tuple[StartCandidate, ...], tuple[CandidateRoom, ...]]:
     allowed_starts = {start_id for start_id, _ in occurrence.allowed_start_room_pairs}
     allowed_rooms = {room_id for _, room_id in occurrence.allowed_start_room_pairs}
@@ -85,10 +84,18 @@ def _filtered_options(
 class CpSatTimetableSolver:
     def __init__(self, *, use_greedy_hints: bool = False) -> None:
         self.use_greedy_hints = use_greedy_hints
+        self._active_solver: cp_model.CpSolver | None = None
+        self._cancel_requested = False
+
+    def cancel(self) -> None:
+        """Request cancellation of the currently running CP-SAT search."""
+        self._cancel_requested = True
+        if self._active_solver is not None:
+            self._active_solver.stop_search()
 
     def _greedy_hints(
-            self,
-            data: SchedulingInput,
+        self,
+        data: SchedulingInput,
     ) -> dict[tuple[int, int], tuple[int, int]]:
         if not self.use_greedy_hints:
             return {}
@@ -102,10 +109,10 @@ class CpSatTimetableSolver:
 
     @staticmethod
     def _greedy_fallback(
-            data: SchedulingInput,
-            started: float,
-            reason: str,
-            **diagnostics: Any,
+        data: SchedulingInput,
+        started: float,
+        reason: str,
+        **diagnostics: Any,
     ) -> SolverResult | None:
         """Return a fast greedy result instead of building the CP-SAT model.
 
@@ -135,40 +142,49 @@ class CpSatTimetableSolver:
     def solve(self, data: SchedulingInput) -> SolverResult:
         require_valid_scheduling_input(data)
         started = perf_counter()
+        requested_time_limit = float(data.parameters.get("time_limit_seconds", 0.0))
+        unlimited_search = requested_time_limit <= 0
         occurrence_count = len(data.occurrences)
         total_allowed_pairs = sum(
             len(occurrence.allowed_start_room_pairs) for occurrence in data.occurrences
         )
 
-        # A large Hybrid run does not need a second global CP-SAT search for
-        # the demo workflow. The BFD placement is already independently
-        # validated and is dramatically faster on a full faculty dataset.
-        # Smaller inputs still receive the normal CP-SAT refinement.
-        if self.use_greedy_hints and occurrence_count >= HYBRID_GREEDY_FAST_PATH_OCCURRENCES:
+        # A large faculty run does not need a second global CP-SAT search for
+        # the demo workflow. The BFD placement is independently validated and
+        # is dramatically faster on a full faculty dataset. This applies to
+        # both CP-SAT and Hybrid so choosing CP-SAT cannot reintroduce the
+        # multi-minute model-building problem.
+        fast_path_required = (
+            occurrence_count >= FAST_PATH_OCCURRENCE_COUNT
+            or total_allowed_pairs >= MAX_ALLOWED_PAIRS_FOR_CP_SAT
+        )
+        if fast_path_required:
             fallback = self._greedy_fallback(
                 data,
                 started,
-                "BFD baseline for large Hybrid input",
+                "BFD baseline for large input",
                 occurrence_count=occurrence_count,
             )
             if fallback is not None:
                 return fallback
 
-        # This applies to every algorithm that goes through this solver
-        # (plain CP_SAT included), because it is the size of the candidate
-        # table - not which algorithm was requested - that drives the
-        # Python-side model-building cost described above.
-        if total_allowed_pairs >= MAX_ALLOWED_PAIRS_FOR_CP_SAT:
-            fallback = self._greedy_fallback(
-                data,
-                started,
-                "BFD baseline: candidate (slot, room) table too large for CP-SAT",
-                occurrence_count=occurrence_count,
-                total_allowed_pairs=total_allowed_pairs,
-                threshold=MAX_ALLOWED_PAIRS_FOR_CP_SAT,
+            # Do not continue into model construction after the quick
+            # baseline has failed on an oversized input. The CP-SAT timer
+            # cannot protect the Python-side model builder, so doing so can
+            # leave the HTTP request running for many minutes. The input
+            # validator has already confirmed that the failure is not caused
+            # by an empty candidate set; return a bounded failure instead.
+            return SolverResult(
+                status=TimetableRunStatus.FAILED,
+                execution_time_ms=int((perf_counter() - started) * 1000),
+                diagnostics={
+                    "reason": "fast_baseline_exhausted",
+                    "occurrence_count": occurrence_count,
+                    "total_allowed_pairs": total_allowed_pairs,
+                    "fast_path_occurrence_threshold": FAST_PATH_OCCURRENCE_COUNT,
+                    "threshold": MAX_ALLOWED_PAIRS_FOR_CP_SAT,
+                },
             )
-            if fallback is not None:
-                return fallback
 
         model = cp_model.CpModel()
         occurrence_vars: dict[tuple[int, int], _OccurrenceVariables] = {}
@@ -254,7 +270,7 @@ class CpSatTimetableSolver:
                 if constraint.constraint_type == TimeConstraintType.PREFERRED_WINDOW
             )
             allowed_cost_rows: list[tuple[int, int, int]] = []
-            for start_slot_id, room_id in occurrence.allowed_start_room_pairs:
+            for start_slot_id, room_id in sorted(occurrence.allowed_start_room_pairs):
                 if start_slot_id not in start_index or room_id not in room_index:
                     continue
                 candidate = starts[start_index[start_slot_id]]
@@ -316,7 +332,7 @@ class CpSatTimetableSolver:
                 by_session[variables.occurrence.session_id].append(variables)
             for session_variables in by_session.values():
                 for index, first in enumerate(session_variables):
-                    for second in session_variables[index + 1:]:
+                    for second in session_variables[index + 1 :]:
                         model.add(first.day != second.day)
 
         by_session_vars: dict[int, list[_OccurrenceVariables]] = defaultdict(list)
@@ -398,20 +414,44 @@ class CpSatTimetableSolver:
             model.add_hint(variables.start_option, hint_start_index)
             model.add_hint(variables.room_option, hint_room_index)
 
-        model.minimize(sum(objective_terms))
+        # An unlimited request means "do not impose a wall-clock limit", not
+        # "prove the best soft-constraint score". The latter can keep CP-SAT
+        # searching after it already has a valid timetable. Return the first
+        # feasible solution in unlimited mode; a positive limit still keeps
+        # the existing optimization objective.
+        if not unlimited_search:
+            model.minimize(sum(objective_terms))
         solver = cp_model.CpSolver()
-        requested_time_limit = float(data.parameters.get("time_limit_seconds", 30.0))
-        effective_time_limit = min(MAX_SOLVER_TIME_SECONDS, max(1.0, requested_time_limit))
-        requested_workers = int(data.parameters.get("num_search_workers", 8))
+        requested_workers = int(data.parameters.get("num_search_workers", MAX_SEARCH_WORKERS))
         effective_workers = min(MAX_SEARCH_WORKERS, max(1, requested_workers))
-        solver.parameters.max_time_in_seconds = effective_time_limit
+        # CP-SAT interprets zero as no time limit. Do not clamp this value:
+        # users must be able to wait longer than the old 8/30-second caps.
+        solver.parameters.max_time_in_seconds = max(0.0, requested_time_limit)
         solver.parameters.num_search_workers = effective_workers
+        # The application promises one final timetable, not a proof that the
+        # soft-constraint objective is mathematically optimal. Returning the
+        # first feasible solution prevents an unlimited optimization search
+        # from delaying a valid timetable indefinitely.
+        solver.parameters.stop_after_first_solution = True
         solver.parameters.random_seed = int(data.parameters.get("random_seed", 0))
         solver.parameters.log_search_progress = bool(
             data.parameters.get("log_search_progress", False)
         )
-        status = solver.solve(model)
+        self._active_solver = solver
+        try:
+            status = solver.solve(model)
+        finally:
+            self._active_solver = None
         elapsed = int((perf_counter() - started) * 1000)
+        if self._cancel_requested:
+            return SolverResult(
+                status=TimetableRunStatus.FAILED,
+                execution_time_ms=elapsed,
+                diagnostics={
+                    "cp_sat_status": solver.status_name(status),
+                    "message": "CP-SAT search was cancelled.",
+                },
+            )
         if status == cp_model.INFEASIBLE:
             return SolverResult(
                 status=TimetableRunStatus.INFEASIBLE,
@@ -433,7 +473,7 @@ class CpSatTimetableSolver:
                     "BFD baseline after CP-SAT search timeout",
                     cp_sat_status=solver.status_name(status),
                     requested_time_limit_seconds=requested_time_limit,
-                    effective_time_limit_seconds=effective_time_limit,
+                    effective_time_limit_seconds=requested_time_limit or None,
                 )
                 if fallback is not None:
                     return fallback
@@ -481,19 +521,19 @@ class CpSatTimetableSolver:
                 "conflicts": solver.num_conflicts,
                 "greedy_hint_count": len(hints),
                 "requested_time_limit_seconds": requested_time_limit,
-                "effective_time_limit_seconds": effective_time_limit,
+                "effective_time_limit_seconds": requested_time_limit or None,
                 "effective_search_workers": effective_workers,
             },
         )
 
     @staticmethod
     def _add_gap_penalties(
-            model: cp_model.CpModel,
-            data: SchedulingInput,
-            occupancy_terms: dict[tuple[int, int], list[Any]],
-            weight: int,
-            objective_terms: list[Any],
-            label: str,
+        model: cp_model.CpModel,
+        data: SchedulingInput,
+        occupancy_terms: dict[tuple[int, int], list[Any]],
+        weight: int,
+        objective_terms: list[Any],
+        label: str,
     ) -> None:
         if weight == 0:
             return
@@ -527,7 +567,7 @@ class CpSatTimetableSolver:
                     before = model.new_bool_var(f"{label}_{resource_id}_d{day}_before{index}")
                     after = model.new_bool_var(f"{label}_{resource_id}_d{day}_after{index}")
                     model.add_max_equality(before, occupied[:index])
-                    model.add_max_equality(after, occupied[index + 1:])
+                    model.add_max_equality(after, occupied[index + 1 :])
                     gap = model.new_bool_var(f"{label}_{resource_id}_d{day}_gap{index}")
                     model.add(gap <= before)
                     model.add(gap <= after)

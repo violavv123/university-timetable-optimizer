@@ -1,4 +1,4 @@
-import type { Course } from "./academic.types";
+import type { Course, Level, StudyProgram } from "./academic.types";
 import type { DayOfWeek, Id } from "./common.types";
 import type { Room, StaffMember, StudentGroup } from "./resource.types";
 import type { CourseSession, TimeSlot } from "./scheduling.types";
@@ -87,6 +87,8 @@ export interface ResolvedEntry extends TimetableEntry {
   room?: Room;
   session?: CourseSession;
   course?: Course;
+  program?: StudyProgram;
+  level?: Level;
   staff: StaffMember[];
   groups: StudentGroup[];
 }

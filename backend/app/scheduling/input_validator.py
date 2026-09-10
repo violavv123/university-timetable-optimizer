@@ -45,22 +45,22 @@ def _overlaps(first: AvailabilityWindow, second: AvailabilityWindow) -> bool:
 
 
 def _validate_parameters(data: SchedulingInput, issues: list[ValidationIssue]) -> None:
-    numeric_positive = ("time_limit_seconds",)
+    numeric_nonnegative = ("time_limit_seconds",)
     integer_positive = ("num_search_workers",)
     integer_nonnegative = (
         "random_seed",
         "unused_seat_weight",
         "master_evening_weight",
     )
-    for key in numeric_positive:
+    for key in numeric_nonnegative:
         value = data.parameters.get(key)
         if value is not None and (
-            isinstance(value, bool) or not isinstance(value, (int, float)) or value <= 0
+            isinstance(value, bool) or not isinstance(value, (int, float)) or value < 0
         ):
             _issue(
                 issues,
                 "INVALID_SOLVER_PARAMETER",
-                f"{key} must be a positive number.",
+                f"{key} must be a nonnegative number; zero means no time limit.",
                 parameter=key,
             )
     for key in integer_positive:

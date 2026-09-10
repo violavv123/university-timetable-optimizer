@@ -14,7 +14,8 @@ class SchedulingParameters(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    time_limit_seconds: float = Field(default=8.0, gt=0, le=8.0)
+    # Zero means no CP-SAT time limit.
+    time_limit_seconds: float = Field(default=0.0, ge=0)
     num_search_workers: int = Field(default=2, gt=0, le=2)
     random_seed: int = Field(default=0, ge=0)
     spread_repeated_occurrences: bool = True

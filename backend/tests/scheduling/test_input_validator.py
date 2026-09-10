@@ -41,3 +41,19 @@ def test_invalid_master_evening_window_is_rejected() -> None:
     result = validate_scheduling_input(data)
 
     assert "INVALID_SOLVER_PARAMETER" in {issue.code for issue in result.issues}
+
+
+def test_zero_solver_time_limit_means_no_limit() -> None:
+    time_slot = slot(1, day=1, index=0, start_minute=480, week_index=0)
+    classroom = room(1, "611", 100)
+    session = occurrence(1, start(time_slot), classroom)
+    data = scheduling_input(
+        slots=(time_slot,),
+        rooms=(classroom,),
+        occurrences=(session,),
+        parameters={"time_limit_seconds": 0},
+    )
+
+    result = validate_scheduling_input(data)
+
+    assert result.is_valid

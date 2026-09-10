@@ -64,7 +64,7 @@ export function AppShell() {
               </span>
             </div>
             {generation.status === "succeeded" && generation.results[0] && (
-              <Link className="generation-strip__action" to="/generate">
+              <Link className="generation-strip__action" to={`/runs/${generation.results[0].id}`}>
                 Review timetable <Icon name="arrow" />
               </Link>
             )}

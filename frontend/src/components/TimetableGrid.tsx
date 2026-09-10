@@ -4,7 +4,18 @@ import { Badge, Button, EmptyState } from "./ui";
 import { DAY_NAMES, WORK_DAYS, humanize, shortTime } from "../lib/format";
 import type { DayOfWeek, ResolvedEntry, TimeSlot } from "../types";
 
-const colorByType = { LECTURE: "green", NUMERICAL: "purple", LABORATORY: "gold" } as const;
+const programLevelPalette = ["green", "red", "blue", "purple", "gold", "teal", "pink", "slate"] as const;
+type ProgramLevelColor = (typeof programLevelPalette)[number];
+const fixedProgramLevelColors: Record<string, ProgramLevelColor> = { "TIK:BSC": "green", "TIK:MSC": "red" };
+
+function programLevelKey(entry: ResolvedEntry) {
+  return `${entry.program?.code?.toUpperCase() ?? "OTHER"}:${entry.level?.code?.toUpperCase() ?? "OTHER"}`;
+}
+
+function programLevelLabel(key: string) {
+  const [program, level] = key.split(":");
+  return program === "OTHER" || level === "OTHER" ? "Other" : `${program} · ${level}`;
+}
 
 export function TimetableGrid({ entries, slots, onToggleLock, lockingId }: { entries: ResolvedEntry[]; slots: TimeSlot[]; onToggleLock: (entry: ResolvedEntry) => void; lockingId?: number }) {
   const [selected, setSelected] = useState<ResolvedEntry | null>(null);
@@ -13,20 +24,43 @@ export function TimetableGrid({ entries, slots, onToggleLock, lockingId }: { ent
   const days: DayOfWeek[] = showWeekend ? [1, 2, 3, 4, 5, 6, 7] : WORK_DAYS;
   const rowIndices = useMemo(() => [...new Set(slots.map((slot) => slot.slot_index))].sort((a, b) => a - b), [slots]);
   const labels = useMemo(() => rowIndices.map((index) => slots.find((slot) => slot.slot_index === index)), [rowIndices, slots]);
-  const filtered = entries.filter((entry) => `${entry.course?.name ?? ""} ${entry.course?.code ?? ""} ${entry.room?.code ?? ""} ${entry.staff.map((person) => `${person.first_name} ${person.last_name}`).join(" ")}`.toLowerCase().includes(query.toLowerCase()));
+  const colorByProgramLevel = useMemo(() => {
+    const keys = [...new Set(entries.map(programLevelKey))].sort();
+    const colors = new Map<string, ProgramLevelColor>();
+    const used = new Set<ProgramLevelColor>();
+    for (const key of keys) {
+      const fixed = fixedProgramLevelColors[key];
+      if (fixed) {
+        colors.set(key, fixed);
+        used.add(fixed);
+      }
+    }
+    let paletteIndex = 0;
+    for (const key of keys) {
+      if (colors.has(key)) continue;
+      while (paletteIndex < programLevelPalette.length && used.has(programLevelPalette[paletteIndex])) paletteIndex += 1;
+      const color = programLevelPalette[paletteIndex % programLevelPalette.length];
+      colors.set(key, color);
+      used.add(color);
+      paletteIndex += 1;
+    }
+    return colors;
+  }, [entries]);
+  const legendItems = useMemo(() => [...colorByProgramLevel.entries()], [colorByProgramLevel]);
+  const filtered = entries.filter((entry) => `${entry.course?.name ?? ""} ${entry.course?.code ?? ""} ${entry.room?.code ?? ""} ${entry.program?.code ?? ""} ${entry.level?.code ?? ""} ${entry.staff.map((person) => `${person.first_name} ${person.last_name}`).join(" ")}`.toLowerCase().includes(query.toLowerCase()));
 
   if (!entries.length) return <EmptyState title="No assigned sessions" description="This run did not produce timetable entries." />;
 
   return (
     <>
-      <div className="timetable-toolbar"><div className="search-box"><span>⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Find a course, room or lecturer…" /></div><label className="switch-label"><input type="checkbox" checked={showWeekend} onChange={(event) => setShowWeekend(event.target.checked)} /><span className="switch" />Show weekend</label><div className="timetable-legend"><span><i className="legend-dot legend-dot--green" />Lecture</span><span><i className="legend-dot legend-dot--purple" />Exercises</span><span><i className="legend-dot legend-dot--gold" />Laboratory</span></div></div>
+      <div className="timetable-toolbar"><div className="search-box"><span>⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Find a course, room or lecturer…" /></div><label className="switch-label"><input type="checkbox" checked={showWeekend} onChange={(event) => setShowWeekend(event.target.checked)} /><span className="switch" />Show weekend</label><div className="timetable-legend" aria-label="Department and study level colors">{legendItems.map(([key, color]) => <span key={key}><i className={`legend-dot legend-dot--${color}`} />{programLevelLabel(key)}</span>)}</div></div>
       <div className="timetable-scroll"><div className="timetable" style={{ "--days": days.length, "--rows": rowIndices.length } as CSSProperties}>
         <div className="timetable__corner">Time</div>{days.map((day) => <div className="timetable__day" key={day}><strong>{DAY_NAMES[day]}</strong><span>{filtered.filter((entry) => entry.slot?.day_of_week === day).length} sessions</span></div>)}
         <div className="timetable__times">{labels.map((slot, index) => <div key={rowIndices[index]}><strong>{shortTime(slot?.start_time)}</strong><span>{shortTime(slot?.end_time)}</span></div>)}</div>
         {days.map((day) => <div className="timetable__column" key={day} style={{ gridTemplateRows: `repeat(${rowIndices.length}, minmax(82px, 1fr))` }}>{rowIndices.map((row) => <div className="timetable__cell" key={row} />)}{filtered.filter((entry) => entry.slot?.day_of_week === day).map((entry) => {
           const start = rowIndices.indexOf(entry.slot?.slot_index ?? -1) + 1;
           const span = Math.max(1, Math.min(entry.session?.duration_slots ?? 1, rowIndices.length - start + 1));
-          const color = entry.session ? colorByType[entry.session.component_type] : "green";
+          const color = colorByProgramLevel.get(programLevelKey(entry)) ?? "slate";
           return <button key={entry.id} className={`schedule-card schedule-card--${color}${entry.is_locked ? " schedule-card--locked" : ""}`} style={{ gridRow: `${start} / span ${span}` }} onClick={() => setSelected(entry)}><span className="schedule-card__time">{shortTime(entry.slot?.start_time)} · {entry.session?.duration_slots ?? 1} slot{(entry.session?.duration_slots ?? 1) > 1 ? "s" : ""}</span><strong>{entry.course?.code ?? entry.session?.name ?? `Session ${entry.course_session_id}`}</strong><small>{entry.course?.name ?? entry.session?.name}</small><span className="schedule-card__meta"><b>{entry.room?.code ?? `Room ${entry.room_id}`}</b>{entry.is_locked && <Icon name="lock" />}</span></button>;
         })}</div>)}
       </div></div>

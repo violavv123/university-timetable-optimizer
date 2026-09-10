@@ -83,6 +83,7 @@ def generate_timetable(
             run.id,
             outcome.assignments,
             preserve_locked=(run.source_type == TimetableSourceType.REOPTIMIZED),
+            validate_assignments=False,
         )
         return complete_timetable_run(
             db,
@@ -91,6 +92,7 @@ def generate_timetable(
             objective_score=outcome.objective_score,
             soft_penalty=outcome.soft_penalty,
             execution_time_ms=outcome.execution_time_ms,
+            validate=False,
         )
     except Exception:
         db.rollback()
