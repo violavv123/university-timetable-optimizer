@@ -1,5 +1,13 @@
 import type { Id } from "./common.types";
 
+export interface AcademicYear {
+  id: Id;
+  name: string;
+  start_date: string;
+  end_date: string;
+  is_current: boolean;
+}
+
 export interface AcademicTerm {
   id: Id;
   academic_year_id: Id;

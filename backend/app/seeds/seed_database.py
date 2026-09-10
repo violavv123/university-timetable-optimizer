@@ -4,12 +4,17 @@ Run from the backend directory with::
 
     python -m app.seeds.seed_database
 
+To atomically replace all application data before seeding::
+
+    python -m app.seeds.seed_database --reset
+
 The application services currently commit internally. This seeder therefore
 uses the SQLAlchemy models directly so that all 24 seed stages share one atomic
 transaction. Its data is constructed to satisfy the same cross-table business
 rules enforced by the services.
 """
 
+import argparse
 import importlib
 import pkgutil
 from collections import Counter
@@ -18,7 +23,7 @@ from typing import Any
 
 from app.database import SessionLocal
 from app.seeds import data
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
 MODEL_NAMES = (
@@ -75,6 +80,30 @@ def _load_models() -> dict[str, type[Any]]:
 
 
 MODELS = _load_models()
+
+
+def reset_database(db: Session) -> None:
+    """Remove application data while preserving Alembic's migration version.
+
+    PostgreSQL TRUNCATE is transactional, so a later seed failure rolls the
+    reset back together with the inserts instead of leaving an empty database.
+    """
+    table_names = list(
+        db.execute(
+            text(
+                "SELECT tablename FROM pg_tables "
+                "WHERE schemaname = current_schema() "
+                "AND tablename <> 'alembic_version'"
+            )
+        ).scalars()
+    )
+    if not table_names:
+        print("No application tables found to reset.")
+        return
+    preparer = db.get_bind().dialect.identifier_preparer
+    targets = ", ".join(preparer.quote(name) for name in table_names)
+    db.execute(text(f"TRUNCATE TABLE {targets} RESTART IDENTITY CASCADE"))
+    print(f"Reset {len(table_names)} application tables.")
 
 
 class Seeder:
@@ -386,9 +415,24 @@ def seed_database(db: Session) -> Seeder:
     return seed
 
 
+def _parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Seed the FIEK timetable database.")
+    parser.add_argument(
+        "--reset",
+        action="store_true",
+        help="Replace all application data before inserting this seed package.",
+    )
+    return parser.parse_args()
+
+
 def main() -> None:
+    args = _parse_args()
     with SessionLocal() as db:
         try:
+            if args.reset:
+                # Validate the complete in-memory fixture before removing data.
+                data.validate_seed_data()
+                reset_database(db)
             seed = seed_database(db)
             db.commit()
         except Exception:

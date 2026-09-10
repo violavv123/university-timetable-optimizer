@@ -63,6 +63,7 @@ export function GeneratePage() {
   const generation = useGeneration();
   const [form, setForm] = useState(initialForm);
   const [facultyId, setFacultyId] = useState(0);
+  const [timeLimitInput, setTimeLimitInput] = useState("30");
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [submittedHere, setSubmittedHere] = useState(false);
   const faculties = useQuery({ queryKey: ["faculties"], queryFn: catalogService.faculties });
@@ -92,8 +93,8 @@ export function GeneratePage() {
   const selectedTerm = terms.data?.find((item) => item.id === form.academic_term_id);
   const queryError = faculties.error ?? terms.error ?? profiles.error;
   const canSubmit = useMemo(
-    () => facultyId > 0 && Boolean(form.name.trim()) && form.academic_term_id > 0 && Boolean(selectedProfile) && generation.status !== "running",
-    [facultyId, form, generation.status, selectedProfile],
+    () => facultyId > 0 && Boolean(form.name.trim()) && form.academic_term_id > 0 && Boolean(selectedProfile) && Number(timeLimitInput) >= 1 && generation.status !== "running",
+    [facultyId, form, generation.status, selectedProfile, timeLimitInput],
   );
 
   function changeFaculty(nextFacultyId: number) {
@@ -106,7 +107,14 @@ export function GeneratePage() {
     if (!canSubmit || !selectedFaculty) return;
     setSubmittedHere(true);
     generation.startGeneration(
-      { ...form, name: form.name.trim() },
+      {
+        ...form,
+        name: form.name.trim(),
+        parameters: {
+          ...form.parameters,
+          time_limit_seconds: Number(timeLimitInput),
+        },
+      },
       `${selectedFaculty.code} — ${selectedFaculty.name}`,
     );
   }
@@ -193,7 +201,7 @@ export function GeneratePage() {
                 <Icon name="chevron" className={advancedOpen ? "rotate" : ""} />
               </button>
               {advancedOpen && <div className="form-grid advanced-fields">
-                <label className="field"><span>Time limit (seconds)</span><input type="number" min="1" step="1" value={form.parameters.time_limit_seconds} disabled={isRunning} onChange={(event) => setForm({ ...form, parameters: { ...form.parameters, time_limit_seconds: Number(event.target.value) } })} /><small>Maximum CP-SAT search time. Lower this value for faster demo runs.</small></label>
+                <label className="field"><span>Time limit (seconds)</span><input type="text" inputMode="numeric" pattern="[0-9]*" value={timeLimitInput} disabled={isRunning} aria-invalid={timeLimitInput === "" || Number(timeLimitInput) < 1} onChange={(event) => setTimeLimitInput(event.target.value.replace(/\D/g, ""))} /><small>{timeLimitInput === "" || Number(timeLimitInput) < 1 ? "Enter at least 1 second." : "Maximum CP-SAT search time. Lower this value for faster demo runs."}</small></label>
                 <label className="field"><span>Search workers</span><input type="number" min="1" step="1" value={form.parameters.num_search_workers} disabled={isRunning} onChange={(event) => setForm({ ...form, parameters: { ...form.parameters, num_search_workers: Number(event.target.value) } })} /><small>Parallel CPU workers used by CP-SAT; 8 is a balanced default.</small></label>
                 <label className="field"><span>Random seed</span><input type="number" min="0" step="1" value={form.parameters.random_seed} disabled={isRunning} onChange={(event) => setForm({ ...form, parameters: { ...form.parameters, random_seed: Number(event.target.value) } })} /><small>Use the same seed to make comparison runs reproducible.</small></label>
                 <label className="field"><span>Unused-seat weight</span><input type="number" min="0" step="1" value={form.parameters.unused_seat_weight} disabled={isRunning} onChange={(event) => setForm({ ...form, parameters: { ...form.parameters, unused_seat_weight: Number(event.target.value) } })} /><small>Higher values prefer rooms that fit attendance more closely.</small></label>
@@ -223,7 +231,7 @@ export function GeneratePage() {
             <div><dt>Profile</dt><dd>{selectedProfile?.name ?? "Not selected"}</dd></div>
             <div><dt>Slot duration</dt><dd>{selectedProfile ? `${selectedProfile.slot_minutes} minutes` : "—"}</dd></div>
             <div><dt>Algorithm</dt><dd>{humanize(form.algorithm)}</dd></div>
-            <div><dt>Time limit</dt><dd>{form.parameters.time_limit_seconds} seconds</dd></div>
+            <div><dt>Time limit</dt><dd>{timeLimitInput ? `${timeLimitInput} seconds` : "Not entered"}</dd></div>
           </dl>
           {!isRunning && <div className="summary-note"><Icon name="spark" /><p>The result opens automatically. After validation and publication, use Export CSV on the timetable page.</p></div>}
           <Button type="submit" disabled={!canSubmit}>{isRunning ? <><Spinner small /> Optimizing…</> : <><Icon name="play" /> Generate timetable</>}</Button>
