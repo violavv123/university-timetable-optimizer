@@ -6,7 +6,12 @@ from decimal import Decimal
 from time import perf_counter
 from typing import Any
 
-from app.models.enums import AssignmentSource, DependencyType, TimetableRunStatus
+from app.models.enums import (
+    AssignmentSource,
+    DependencyType,
+    TimeConstraintType,
+    TimetableRunStatus,
+)
 from app.models.timetable_run import TimetableRun
 from app.scheduling.domain import (
     CandidateRoom,
@@ -25,6 +30,22 @@ from app.scheduling.result_validator import require_valid_solver_result
 from app.services.timetable.types import SolverOutcome, TimetableAssignment
 from ortools.sat.python import cp_model
 from sqlalchemy.orm import Session
+
+MAX_SOLVER_TIME_SECONDS = 60.0
+MAX_SEARCH_WORKERS = 8
+HYBRID_GREEDY_FAST_PATH_OCCURRENCES = 80
+
+# `solver.parameters.max_time_in_seconds` only bounds the CP-SAT search
+# itself. Building the model - in particular the per-occurrence
+# AddAllowedAssignments table over every valid (start slot, room) pair - is
+# plain Python work that runs *before* that timer starts, and its cost
+# scales with the total number of candidate pairs across all occurrences.
+# On a full-faculty dataset that table can reach millions of rows, which
+# turns "generation" into a many-minutes-long, un-cancellable Python loop
+# regardless of the solver time limit. If the input is that large, skip
+# building the CP-SAT model altogether and fall back to the much cheaper
+# greedy solver so a single result is still produced quickly.
+MAX_ALLOWED_PAIRS_FOR_CP_SAT = 20_000
 
 
 @dataclass(slots=True)
@@ -47,8 +68,8 @@ def _safe_name(occurrence: SessionOccurrence) -> str:
 
 
 def _filtered_options(
-    data: SchedulingInput,
-    occurrence: SessionOccurrence,
+        data: SchedulingInput,
+        occurrence: SessionOccurrence,
 ) -> tuple[tuple[StartCandidate, ...], tuple[CandidateRoom, ...]]:
     allowed_starts = {start_id for start_id, _ in occurrence.allowed_start_room_pairs}
     allowed_rooms = {room_id for _, room_id in occurrence.allowed_start_room_pairs}
@@ -66,8 +87,8 @@ class CpSatTimetableSolver:
         self.use_greedy_hints = use_greedy_hints
 
     def _greedy_hints(
-        self,
-        data: SchedulingInput,
+            self,
+            data: SchedulingInput,
     ) -> dict[tuple[int, int], tuple[int, int]]:
         if not self.use_greedy_hints:
             return {}
@@ -79,9 +100,76 @@ class CpSatTimetableSolver:
             for assignment in baseline.assignments
         }
 
+    @staticmethod
+    def _greedy_fallback(
+            data: SchedulingInput,
+            started: float,
+            reason: str,
+            **diagnostics: Any,
+    ) -> SolverResult | None:
+        """Return a fast greedy result instead of building the CP-SAT model.
+
+        Returns None if the greedy solver itself could not find a feasible
+        placement, so the caller can proceed to the full CP-SAT attempt (or
+        report the failure) instead of silently losing the run.
+        """
+        baseline = GreedyTimetableSolver(RoomStrategy.BFD).solve(data)
+        if baseline.status != TimetableRunStatus.SUCCEEDED:
+            baseline = GreedyTimetableSolver(RoomStrategy.FFD).solve(data)
+        if baseline.status != TimetableRunStatus.SUCCEEDED:
+            return None
+        elapsed = int((perf_counter() - started) * 1000)
+        return SolverResult(
+            status=baseline.status,
+            assignments=baseline.assignments,
+            objective_score=baseline.objective_score,
+            soft_penalty=baseline.soft_penalty,
+            execution_time_ms=elapsed,
+            diagnostics={
+                **baseline.diagnostics,
+                "fast_path": reason,
+                **diagnostics,
+            },
+        )
+
     def solve(self, data: SchedulingInput) -> SolverResult:
         require_valid_scheduling_input(data)
         started = perf_counter()
+        occurrence_count = len(data.occurrences)
+        total_allowed_pairs = sum(
+            len(occurrence.allowed_start_room_pairs) for occurrence in data.occurrences
+        )
+
+        # A large Hybrid run does not need a second global CP-SAT search for
+        # the demo workflow. The BFD placement is already independently
+        # validated and is dramatically faster on a full faculty dataset.
+        # Smaller inputs still receive the normal CP-SAT refinement.
+        if self.use_greedy_hints and occurrence_count >= HYBRID_GREEDY_FAST_PATH_OCCURRENCES:
+            fallback = self._greedy_fallback(
+                data,
+                started,
+                "BFD baseline for large Hybrid input",
+                occurrence_count=occurrence_count,
+            )
+            if fallback is not None:
+                return fallback
+
+        # This applies to every algorithm that goes through this solver
+        # (plain CP_SAT included), because it is the size of the candidate
+        # table - not which algorithm was requested - that drives the
+        # Python-side model-building cost described above.
+        if total_allowed_pairs >= MAX_ALLOWED_PAIRS_FOR_CP_SAT:
+            fallback = self._greedy_fallback(
+                data,
+                started,
+                "BFD baseline: candidate (slot, room) table too large for CP-SAT",
+                occurrence_count=occurrence_count,
+                total_allowed_pairs=total_allowed_pairs,
+                threshold=MAX_ALLOWED_PAIRS_FOR_CP_SAT,
+            )
+            if fallback is not None:
+                return fallback
+
         model = cp_model.CpModel()
         occurrence_vars: dict[tuple[int, int], _OccurrenceVariables] = {}
         room_intervals: dict[int, list[Any]] = defaultdict(list)
@@ -157,6 +245,14 @@ class CpSatTimetableSolver:
                 )
                 room_intervals[room.id].append(room_interval)
 
+            # Computed once per occurrence rather than once per (start, room)
+            # row: it does not depend on either, and this loop can run for
+            # tens of thousands of rows on a single occurrence.
+            preferred_constraints = tuple(
+                constraint
+                for constraint in occurrence.time_constraints
+                if constraint.constraint_type == TimeConstraintType.PREFERRED_WINDOW
+            )
             allowed_cost_rows: list[tuple[int, int, int]] = []
             for start_slot_id, room_id in occurrence.allowed_start_room_pairs:
                 if start_slot_id not in start_index or room_id not in room_index:
@@ -167,7 +263,13 @@ class CpSatTimetableSolver:
                     (
                         start_index[start_slot_id],
                         room_index[room_id],
-                        placement_penalty(data, occurrence, candidate, room),
+                        placement_penalty(
+                            data,
+                            occurrence,
+                            candidate,
+                            room,
+                            preferred_constraints=preferred_constraints,
+                        ),
                     )
                 )
             maximum_cost = max(row[2] for row in allowed_cost_rows)
@@ -214,7 +316,7 @@ class CpSatTimetableSolver:
                 by_session[variables.occurrence.session_id].append(variables)
             for session_variables in by_session.values():
                 for index, first in enumerate(session_variables):
-                    for second in session_variables[index + 1 :]:
+                    for second in session_variables[index + 1:]:
                         model.add(first.day != second.day)
 
         by_session_vars: dict[int, list[_OccurrenceVariables]] = defaultdict(list)
@@ -298,10 +400,12 @@ class CpSatTimetableSolver:
 
         model.minimize(sum(objective_terms))
         solver = cp_model.CpSolver()
-        solver.parameters.max_time_in_seconds = float(
-            data.parameters.get("time_limit_seconds", 30.0)
-        )
-        solver.parameters.num_search_workers = int(data.parameters.get("num_search_workers", 8))
+        requested_time_limit = float(data.parameters.get("time_limit_seconds", 30.0))
+        effective_time_limit = min(MAX_SOLVER_TIME_SECONDS, max(1.0, requested_time_limit))
+        requested_workers = int(data.parameters.get("num_search_workers", 8))
+        effective_workers = min(MAX_SEARCH_WORKERS, max(1, requested_workers))
+        solver.parameters.max_time_in_seconds = effective_time_limit
+        solver.parameters.num_search_workers = effective_workers
         solver.parameters.random_seed = int(data.parameters.get("random_seed", 0))
         solver.parameters.log_search_progress = bool(
             data.parameters.get("log_search_progress", False)
@@ -318,6 +422,21 @@ class CpSatTimetableSolver:
                 },
             )
         if status not in {cp_model.OPTIMAL, cp_model.FEASIBLE}:
+            # A time-limited CP-SAT search can return UNKNOWN even though the
+            # constructive baseline already found a valid placement. Keep the
+            # request useful by returning that validated baseline instead of
+            # converting a timeout into a failed generation run.
+            if status == cp_model.UNKNOWN:
+                fallback = self._greedy_fallback(
+                    data,
+                    started,
+                    "BFD baseline after CP-SAT search timeout",
+                    cp_sat_status=solver.status_name(status),
+                    requested_time_limit_seconds=requested_time_limit,
+                    effective_time_limit_seconds=effective_time_limit,
+                )
+                if fallback is not None:
+                    return fallback
             return SolverResult(
                 status=TimetableRunStatus.FAILED,
                 execution_time_ms=elapsed,
@@ -361,21 +480,31 @@ class CpSatTimetableSolver:
                 "branches": solver.num_branches,
                 "conflicts": solver.num_conflicts,
                 "greedy_hint_count": len(hints),
+                "requested_time_limit_seconds": requested_time_limit,
+                "effective_time_limit_seconds": effective_time_limit,
+                "effective_search_workers": effective_workers,
             },
         )
 
     @staticmethod
     def _add_gap_penalties(
-        model: cp_model.CpModel,
-        data: SchedulingInput,
-        occupancy_terms: dict[tuple[int, int], list[Any]],
-        weight: int,
-        objective_terms: list[Any],
-        label: str,
+            model: cp_model.CpModel,
+            data: SchedulingInput,
+            occupancy_terms: dict[tuple[int, int], list[Any]],
+            weight: int,
+            objective_terms: list[Any],
+            label: str,
     ) -> None:
         if weight == 0:
             return
-        resource_ids = sorted({resource_id for resource_id, _ in occupancy_terms})
+        resource_term_counts: dict[int, int] = defaultdict(int)
+        for (resource_id, _), terms in occupancy_terms.items():
+            resource_term_counts[resource_id] += len(terms)
+        resource_ids = sorted(
+            resource_id
+            for resource_id, term_count in resource_term_counts.items()
+            if term_count > 1
+        )
         slots_by_day: dict[int, list[int]] = defaultdict(list)
         for slot in data.slots:
             slots_by_day[slot.day_of_week].append(slot.id)
@@ -398,7 +527,7 @@ class CpSatTimetableSolver:
                     before = model.new_bool_var(f"{label}_{resource_id}_d{day}_before{index}")
                     after = model.new_bool_var(f"{label}_{resource_id}_d{day}_after{index}")
                     model.add_max_equality(before, occupied[:index])
-                    model.add_max_equality(after, occupied[index + 1 :])
+                    model.add_max_equality(after, occupied[index + 1:])
                     gap = model.new_bool_var(f"{label}_{resource_id}_d{day}_gap{index}")
                     model.add(gap <= before)
                     model.add(gap <= after)

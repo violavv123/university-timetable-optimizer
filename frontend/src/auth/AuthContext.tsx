@@ -18,24 +18,12 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<CurrentUser | null>(null);
-  const [isInitializing, setIsInitializing] = useState(Boolean(accessToken.get()));
+  const isInitializing = false;
 
   const signOut = useCallback(() => {
     accessToken.clear();
     setUser(null);
   }, []);
-
-  useEffect(() => {
-    const token = accessToken.get();
-    if (!token) {
-      setIsInitializing(false);
-      return;
-    }
-    fetchCurrentUser()
-      .then(setUser)
-      .catch(signOut)
-      .finally(() => setIsInitializing(false));
-  }, [signOut]);
 
   useEffect(() => {
     window.addEventListener("auth:expired", signOut);

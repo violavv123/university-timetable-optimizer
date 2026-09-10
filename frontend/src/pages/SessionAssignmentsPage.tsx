@@ -32,7 +32,7 @@ export function SessionAssignmentsPage() {
   const [deleting, setDeleting] = useState<DeleteTarget | null>(null);
   const [notice, setNotice] = useState("");
 
-  useEffect(() => { document.title = "Teaching assignments — Tempo"; }, []);
+  useEffect(() => { document.title = "Teaching assignments — Time's UP"; }, []);
 
   const sessions = useQuery({ queryKey: ["sessions"], queryFn: catalogService.sessions });
   const staff = useQuery({ queryKey: ["staff"], queryFn: catalogService.staff });

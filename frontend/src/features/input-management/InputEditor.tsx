@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type SubmitEvent } from "react";
 import type { EntityRecord } from "../../types";
 import { Button, ErrorBanner, Spinner } from "../../components/ui";
 import type {
@@ -122,7 +122,7 @@ export function InputEditor({
 
   useEffect(() => setValues(seed), [seed]);
 
-  function submit(event: FormEvent) {
+  function submit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     const nullableFields = new Set([
       "parent_group_id",

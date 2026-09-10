@@ -11,7 +11,7 @@ export const timetableService = {
   generate: async (payload: GenerationRequest) =>
     (
       await httpClient.post<TimetableRun>("/timetables/generate", payload, {
-        timeout: 0,
+        timeout: 30_000,
       })
     ).data,
   validate: async (runId: number) =>

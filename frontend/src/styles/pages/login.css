@@ -16,7 +16,8 @@
 .login-proof svg { width: 20px; height: 20px; padding: 4px; border-radius: 50%; color: #143c2f; background: #79c6a7; }
 .login-proof strong { color: white; font-size: inherit; }
 .login-story__footer { margin: 0; color: #66837a; font-size: 10px; letter-spacing: .3px; }
-.login-panel { display: grid; place-items: center; padding: 40px; }
+.login-panel { position: relative; display: grid; place-items: center; padding: 40px; }
+.university-logo { position: absolute; top: 28px; right: 32px; width: 68px; height: 68px; object-fit: contain; }
 .login-form-wrap { width: min(410px, 100%); }
 .login-form-wrap h2 { margin-bottom: 8px; font-size: 29px; letter-spacing: -.9px; }
 .login-subtitle { margin-bottom: 28px; color: var(--muted); font-size: 13px; line-height: 1.5; }
@@ -29,5 +30,4 @@
 .password-toggle { position: absolute; top: 50%; right: 12px; border: 0; padding: 4px; color: var(--green-700); background: transparent; font-size: 10px; font-weight: 700; transform: translateY(-50%); }
 .login-form .button { width: 100%; min-height: 49px; margin-top: 3px; }
 .login-form .button > span { display: flex; align-items: center; gap: 8px; }
-.login-help { margin-top: 22px; color: #98a09d; font-size: 10px; text-align: center; }
 .login-mobile-brand { display: none; }

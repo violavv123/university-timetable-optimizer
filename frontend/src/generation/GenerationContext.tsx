@@ -8,8 +8,8 @@ import {
   type ReactNode,
 } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { getErrorMessage } from "../lib/api-error";
 import { timetableService } from "../services/timetable.service";
+import { getErrorMessage } from "../lib/api-error";
 import type { GenerationRequest, TimetableRun } from "../types";
 
 type GenerationStatus = "idle" | "running" | "succeeded" | "failed";
@@ -18,14 +18,17 @@ interface GenerationTask {
   status: GenerationStatus;
   request: GenerationRequest | null;
   facultyName: string;
-  result: TimetableRun | null;
+  results: TimetableRun[];
+  selectedResultId: number | null;
   errorMessage: string;
   startedAt: number | null;
   elapsedSeconds: number;
+  stage: string;
 }
 
 interface GenerationContextValue extends GenerationTask {
   startGeneration: (request: GenerationRequest, facultyName: string) => void;
+  selectResult: (runId: number) => void;
   dismiss: () => void;
 }
 
@@ -33,10 +36,12 @@ const idleTask: GenerationTask = {
   status: "idle",
   request: null,
   facultyName: "",
-  result: null,
+  results: [],
+  selectedResultId: null,
   errorMessage: "",
   startedAt: null,
   elapsedSeconds: 0,
+  stage: "",
 };
 
 const GenerationContext = createContext<GenerationContextValue | null>(null);
@@ -52,10 +57,7 @@ export function GenerationProvider({ children }: { children: ReactNode }) {
         current.status === "running" && current.startedAt !== null
           ? {
               ...current,
-              elapsedSeconds: Math.max(
-                0,
-                Math.floor((Date.now() - current.startedAt) / 1000),
-              ),
+              elapsedSeconds: Math.max(0, Math.floor((Date.now() - current.startedAt) / 1000)),
             }
           : current,
       );
@@ -70,64 +72,58 @@ export function GenerationProvider({ children }: { children: ReactNode }) {
       if (task.status === "running") return;
       const startedAt = Date.now();
       setTask({
+        ...idleTask,
         status: "running",
         request,
         facultyName,
-        result: null,
-        errorMessage: "",
         startedAt,
-        elapsedSeconds: 0,
+        stage: "Generating timetable",
       });
 
-      void timetableService
-        .generate(request)
-        .then((result) => {
-          setTask((current) => ({
-            ...current,
-            status: "succeeded",
-            result,
-            elapsedSeconds: Math.max(
-              0,
-              Math.floor((Date.now() - startedAt) / 1000),
-            ),
-          }));
-          void queryClient.invalidateQueries({ queryKey: ["runs"] });
-          document.title = "Timetable ready — Tempo";
-        })
-        .catch((error: unknown) => {
-          setTask((current) => ({
-            ...current,
-            status: "failed",
-            errorMessage: getErrorMessage(error),
-            elapsedSeconds: Math.max(
-              0,
-              Math.floor((Date.now() - startedAt) / 1000),
-            ),
-          }));
-          void queryClient.invalidateQueries({ queryKey: ["runs"] });
-          document.title = "Generation failed — Tempo";
-        });
+      void (async () => {
+        let completed: TimetableRun[] = [];
+        let finalError = "";
+        try {
+          const result = await timetableService.generate(request);
+          if (result.status === "SUCCEEDED") {
+            completed = [result];
+          } else {
+            finalError = `Generation ended with status ${result.status.toLowerCase()}. Try a faster strategy or increase the time limit slightly.`;
+          }
+        } catch (error) {
+          finalError = getErrorMessage(error);
+        }
+        setTask((current) => ({
+          ...current,
+          status: completed.length ? "succeeded" : "failed",
+          results: completed,
+          selectedResultId: completed[0]?.id ?? null,
+          errorMessage: finalError,
+          stage: "Results ready",
+          elapsedSeconds: Math.max(0, Math.floor((Date.now() - startedAt) / 1000)),
+        }));
+        void queryClient.invalidateQueries({ queryKey: ["runs"] });
+        document.title = completed.length ? "Timetable ready — Time's UP" : "Generation failed — Time's UP";
+      })();
     },
     [queryClient, task.status],
   );
 
+  const selectResult = useCallback((runId: number) => {
+    setTask((current) => ({ ...current, selectedResultId: runId }));
+  }, []);
+
   const dismiss = useCallback(() => setTask(idleTask), []);
   const value = useMemo(
-    () => ({ ...task, startGeneration, dismiss }),
-    [task, startGeneration, dismiss],
+    () => ({ ...task, startGeneration, selectResult, dismiss }),
+    [task, startGeneration, selectResult, dismiss],
   );
 
-  return (
-    <GenerationContext.Provider value={value}>
-      {children}
-    </GenerationContext.Provider>
-  );
+  return <GenerationContext.Provider value={value}>{children}</GenerationContext.Provider>;
 }
 
 export function useGeneration() {
   const context = useContext(GenerationContext);
-  if (!context) {
-    throw new Error("useGeneration must be used within GenerationProvider");
-  }
+  if (!context) throw new Error("useGeneration must be used within GenerationProvider");
   return context;
 }

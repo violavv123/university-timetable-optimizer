@@ -152,6 +152,15 @@
   width: 14px;
 }
 
+.management-pagination { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 22px; border-top: 1px solid #e8ece9; color: #8a9690; font-size: 9px; }
+.management-pagination > div { display: flex; align-items: center; gap: 9px; }
+.management-pagination strong { color: #53645d; font-size: 9px; }
+.pagination-arrow { width: 29px; height: 29px; border: 1px solid #dfe5e1; border-radius: 8px; display: grid; place-items: center; color: #526a60; background: #fff; }
+.pagination-arrow:hover:not(:disabled) { border-color: #a9c9ba; color: #276b55; background: #f2f9f5; }
+.pagination-arrow:disabled { color: #b8c1bc; background: #f6f8f6; }
+.pagination-arrow svg { width: 15px; height: 15px; }
+.pagination-arrow--previous { transform: rotate(180deg); }
+
 .management-error {
   padding: 22px;
 }

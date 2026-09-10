@@ -1,12 +1,3 @@
-"""Complete FIEK curriculum catalog and solver-oriented summer-term fixture.
-
-The catalog is built from all eight supplied BSc/MSc study plans. The selected
-active term, assistant rotations, personal availability, cohort sizes, and
-capacities not published in the source material are explicit test assumptions.
-Non-routable ``@fiek.example`` addresses intentionally fill the required email
-field without presenting guessed contact details as official addresses.
-"""
-
 from __future__ import annotations
 
 from collections import defaultdict

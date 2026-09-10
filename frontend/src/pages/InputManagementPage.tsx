@@ -33,13 +33,18 @@ export function InputManagementPage() {
   const [editing, setEditing] = useState<EntityRecord | null | undefined>();
   const [deleting, setDeleting] = useState<EntityRecord | null>(null);
   const [notice, setNotice] = useState("");
+  const [page, setPage] = useState(1);
+  const pageSize = 15;
 
   useEffect(() => {
-    document.title = `Input management — Tempo`;
+    document.title = `Input management — Time's UP`;
     setSearch("");
     setEditing(undefined);
     setDeleting(null);
+    setPage(1);
   }, [resourceKey]);
+
+  useEffect(() => setPage(1), [search]);
 
   const records = useQuery({
     queryKey: ["managed-resource", definition?.key],
@@ -85,6 +90,15 @@ export function InputManagementPage() {
       ),
     );
   }, [records.data, search]);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const visibleItems = useMemo(
+    () => filtered.slice((page - 1) * pageSize, page * pageSize),
+    [filtered, page],
+  );
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
   if (!definition) return <Navigate to="/inputs/rooms" replace />;
 
@@ -195,13 +209,25 @@ export function InputManagementPage() {
               <ErrorBanner message={getErrorMessage(records.error)} />
             </div>
           ) : (
-            <ResourceTable
-              definition={definition}
-              items={filtered}
-              lookups={lookups.data}
-              onEdit={setEditing}
-              onDelete={setDeleting}
-            />
+            <>
+              <ResourceTable
+                definition={definition}
+                items={visibleItems}
+                lookups={lookups.data}
+                onEdit={setEditing}
+                onDelete={setDeleting}
+              />
+            {filtered.length > pageSize && (
+              <div className="management-pagination" aria-label="Input data pages">
+                <span>Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, filtered.length)} of {filtered.length}</span>
+                <div>
+                  <button type="button" className="pagination-arrow" disabled={page === 1} onClick={() => setPage((current) => Math.max(1, current - 1))} aria-label="Previous page"><Icon name="chevron" className="pagination-arrow--previous" /></button>
+                  <strong>Page {page} of {totalPages}</strong>
+                  <button type="button" className="pagination-arrow" disabled={page === totalPages} onClick={() => setPage((current) => Math.min(totalPages, current + 1))} aria-label="Next page"><Icon name="chevron" /></button>
+                </div>
+              </div>
+              )}
+            </>
           )}
         </section>
       </div>

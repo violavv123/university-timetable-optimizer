@@ -72,7 +72,7 @@ export function DataOverviewPage() {
   const [termId, setTermId] = useState(0);
   const [message, setMessage] = useState("");
   const queryClient = useQueryClient();
-  useEffect(() => { document.title = "Data readiness — Tempo"; }, []);
+  useEffect(() => { document.title = "Data readiness — Time's UP"; }, []);
 
   const terms = useQuery({ queryKey: ["terms"], queryFn: catalogService.terms });
   useEffect(() => {

@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type SubmitEvent } from "react";
 import { Button } from "../../components/ui";
 import type {
   CourseSession,
@@ -38,7 +38,7 @@ export function StaffAssignmentForm({
     if (!initial) setSessionId(selectedSessionId);
   }, [initial, selectedSessionId]);
 
-  function submit(event: FormEvent) {
+  function submit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     onSubmit({
       course_session_id: sessionId,

@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import asdict, dataclass
 from math import ceil
+from typing import Any
 
 from app.models.enums import AvailabilityType, TimeConstraintType
 from app.scheduling.domain import (
@@ -46,17 +47,17 @@ def _is_master_level(level_code: str) -> bool:
 
 
 def _master_outside_preferred_slots(
-    data: SchedulingInput,
-    occurrence: SessionOccurrence,
-    start: StartCandidate,
+        data: SchedulingInput,
+        occurrence: SessionOccurrence,
+        start: StartCandidate,
 ) -> int:
     if not _is_master_level(occurrence.level_code):
         return 0
     # An explicitly configured session preference is more precise and should
     # not be charged a second time by the institutional fallback.
     if any(
-        constraint.constraint_type == TimeConstraintType.PREFERRED_WINDOW
-        for constraint in occurrence.time_constraints
+            constraint.constraint_type == TimeConstraintType.PREFERRED_WINDOW
+            for constraint in occurrence.time_constraints
     ):
         return 0
     preferred_start = data.parameters.get("master_evening_start_minute", 17 * 60)
@@ -80,15 +81,15 @@ def _master_evening_weight(data: SchedulingInput) -> int:
 
 
 def _availability_penalty(
-    windows: tuple[AvailabilityWindow, ...],
-    start: StartCandidate,
+        windows: tuple[AvailabilityWindow, ...],
+        start: StartCandidate,
 ) -> int:
     penalty = 0
     avoid = (
         window
         for window in windows
         if window.availability_type == AvailabilityType.AVOID
-        and window.day_of_week == start.day_of_week
+           and window.day_of_week == start.day_of_week
     )
     penalty += sum(
         window.preference_weight
@@ -104,40 +105,49 @@ def _availability_penalty(
         window for window in windows if window.availability_type == AvailabilityType.PREFERRED
     )
     if preferred and not any(
-        window.day_of_week == start.day_of_week
-        and _contains(
-            window.start_minute,
-            window.end_minute,
-            start.start_minute,
-            start.end_minute,
-        )
-        for window in preferred
+            window.day_of_week == start.day_of_week
+            and _contains(
+                window.start_minute,
+                window.end_minute,
+                start.start_minute,
+                start.end_minute,
+            )
+            for window in preferred
     ):
         penalty += max(window.preference_weight for window in preferred)
     return penalty
 
 
 def placement_penalty(
-    data: SchedulingInput,
-    occurrence: SessionOccurrence,
-    start: StartCandidate,
-    room: CandidateRoom,
+        data: SchedulingInput,
+        occurrence: SessionOccurrence,
+        start: StartCandidate,
+        room: CandidateRoom,
+        *,
+        preferred_constraints: tuple[Any, ...] | None = None,
 ) -> int:
     penalty = 0
-    preferred_constraints = tuple(
-        constraint
-        for constraint in occurrence.time_constraints
-        if constraint.constraint_type == TimeConstraintType.PREFERRED_WINDOW
-    )
-    if preferred_constraints and not any(
-        constraint.day_of_week in {None, start.day_of_week}
-        and _contains(
-            constraint.start_minute,
-            constraint.end_minute,
-            start.start_minute,
-            start.end_minute,
+    # This is invariant per occurrence (it does not depend on `start` or
+    # `room`), but this function is called once per candidate (start, room)
+    # pair - which can be in the tens of thousands for a single occurrence
+    # on a full faculty dataset. Callers building many rows for the same
+    # occurrence (e.g. the CP-SAT model builder) should compute this once
+    # and pass it in to avoid re-filtering the same tuple on every call.
+    if preferred_constraints is None:
+        preferred_constraints = tuple(
+            constraint
+            for constraint in occurrence.time_constraints
+            if constraint.constraint_type == TimeConstraintType.PREFERRED_WINDOW
         )
-        for constraint in preferred_constraints
+    if preferred_constraints and not any(
+            constraint.day_of_week in {None, start.day_of_week}
+            and _contains(
+                constraint.start_minute,
+                constraint.end_minute,
+                start.start_minute,
+                start.end_minute,
+            )
+            for constraint in preferred_constraints
     ):
         penalty += max(
             constraint.preference_weight for constraint in preferred_constraints
@@ -168,15 +178,15 @@ def placement_penalty(
         late_minutes = start.end_minute - max(start.start_minute, 17 * 60)
         penalty += ceil(late_minutes / data.slot_minutes) * data.weights.late_hour
     penalty += (
-        _master_outside_preferred_slots(data, occurrence, start)
-        * _master_evening_weight(data)
+            _master_outside_preferred_slots(data, occurrence, start)
+            * _master_evening_weight(data)
     )
     return penalty
 
 
 def _gap_slots(
-    data: SchedulingInput,
-    occupied_by_resource: dict[int, set[int]],
+        data: SchedulingInput,
+        occupied_by_resource: dict[int, set[int]],
 ) -> int:
     slot_by_id = data.slot_by_id
     positions_by_day: dict[int, list[int]] = defaultdict(list)
@@ -199,10 +209,10 @@ def _gap_slots(
 
 
 def calculate_metrics(
-    data: SchedulingInput,
-    assignments: tuple[SolverAssignment, ...],
-    *,
-    hard_conflicts: int = 0,
+        data: SchedulingInput,
+        assignments: tuple[SolverAssignment, ...],
+        *,
+        hard_conflicts: int = 0,
 ) -> TimetableMetrics:
     occurrence_by_key = data.occurrence_by_key
     room_by_id = data.room_by_id
@@ -248,9 +258,9 @@ def calculate_metrics(
     student_gaps = _gap_slots(data, student_occupied)
     staff_gaps = _gap_slots(data, staff_occupied)
     soft_penalty = (
-        placement_total
-        + student_gaps * data.weights.student_gap
-        + staff_gaps * data.weights.staff_gap
+            placement_total
+            + student_gaps * data.weights.student_gap
+            + staff_gaps * data.weights.staff_gap
     )
     return TimetableMetrics(
         assigned_occurrences=len(assignments),

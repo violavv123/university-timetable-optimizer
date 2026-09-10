@@ -37,6 +37,7 @@
   .form-section { grid-template-columns: 1fr; }
   .form-section__number { margin-bottom: -3px; }
   .form-grid, .algorithm-grid { grid-template-columns: 1fr; }
+  .single-result { align-items: flex-start; flex-direction: column; }
   .filters-bar { grid-template-columns: 1fr 1fr 42px; }
   .filters-bar .search-box { grid-column: 1 / -1; }
   .timetable-toolbar { align-items: flex-start; flex-wrap: wrap; }

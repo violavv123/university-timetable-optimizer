@@ -14,8 +14,8 @@ class SchedulingParameters(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    time_limit_seconds: float = Field(default=30.0, gt=0)
-    num_search_workers: int = Field(default=8, gt=0)
+    time_limit_seconds: float = Field(default=8.0, gt=0, le=8.0)
+    num_search_workers: int = Field(default=2, gt=0, le=2)
     random_seed: int = Field(default=0, ge=0)
     spread_repeated_occurrences: bool = True
     unused_seat_weight: int = Field(default=1, ge=0)

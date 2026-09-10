@@ -1,19 +1,23 @@
 import axios from "axios";
 
-const TOKEN_STORAGE_KEY = "timetable_access_token";
+let currentAccessToken: string | null = null;
 
 export const API_BASE_URL =
   import.meta.env.VITE_API_URL ?? "http://localhost:8000/api/v1";
 
 export const httpClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 60_000,
+  timeout: 90_000,
 });
 
 export const accessToken = {
-  get: () => localStorage.getItem(TOKEN_STORAGE_KEY),
-  set: (token: string) => localStorage.setItem(TOKEN_STORAGE_KEY, token),
-  clear: () => localStorage.removeItem(TOKEN_STORAGE_KEY),
+  get: () => currentAccessToken,
+  set: (token: string) => {
+    currentAccessToken = token;
+  },
+  clear: () => {
+    currentAccessToken = null;
+  },
 };
 
 httpClient.interceptors.request.use((config) => {

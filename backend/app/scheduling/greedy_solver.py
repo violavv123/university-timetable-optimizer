@@ -34,8 +34,8 @@ from sqlalchemy.orm import Session
 
 
 def _candidate_for(
-    occurrence: SessionOccurrence,
-    start_slot_id: int,
+        occurrence: SessionOccurrence,
+        start_slot_id: int,
 ) -> StartCandidate:
     return next(
         candidate
@@ -89,22 +89,14 @@ def _session_order(data: SchedulingInput) -> tuple[int, ...]:
 
 
 def _dependency_ok(
-    dependency: SessionDependency,
-    *,
-    candidate_session_id: int,
-    candidate_start: StartCandidate,
-    placed: dict[tuple[int, int], tuple[SolverAssignment, StartCandidate]],
+        dependency: SessionDependency,
+        *,
+        candidate_session_id: int,
+        candidate_start: StartCandidate,
+        placed_starts_by_session: dict[int, list[StartCandidate]],
 ) -> bool:
-    predecessors = tuple(
-        start
-        for key, (_, start) in placed.items()
-        if key[0] == dependency.predecessor_session_id
-    )
-    successors = tuple(
-        start
-        for key, (_, start) in placed.items()
-        if key[0] == dependency.successor_session_id
-    )
+    predecessors = tuple(placed_starts_by_session.get(dependency.predecessor_session_id, ()))
+    successors = tuple(placed_starts_by_session.get(dependency.successor_session_id, ()))
     if candidate_session_id == dependency.successor_session_id:
         # A symmetric relationship may be encountered before its predecessor.
         # Defer the check; it will be enforced when the predecessor is placed
@@ -137,13 +129,21 @@ class GreedyTimetableSolver:
             tuple[int, int],
             tuple[SolverAssignment, StartCandidate],
         ] = {}
+        # `_dependency_ok` used to scan every placed assignment on every call
+        # (it needs the already-placed starts for the other side of the
+        # dependency). That is O(number of placed occurrences) per check, and
+        # it is checked on every room/start candidate attempt for every
+        # occurrence involved in a dependency - quadratic in the number of
+        # occurrences on datasets with many session dependencies. Keeping a
+        # running index by session id makes each lookup O(1) instead.
+        placed_starts_by_session: dict[int, list[StartCandidate]] = defaultdict(list)
 
         def resources_fit(
-            occurrence: SessionOccurrence,
-            start: StartCandidate,
-            room_id: int,
-            *,
-            check_dependencies: bool = True,
+                occurrence: SessionOccurrence,
+                start: StartCandidate,
+                room_id: int,
+                *,
+                check_dependencies: bool = True,
         ) -> bool:
             for slot_id in start.occupied_slot_ids:
                 if (room_id, slot_id) in room_usage:
@@ -151,13 +151,13 @@ class GreedyTimetableSolver:
                 if any((staff_id, slot_id) in staff_usage for staff_id in occurrence.staff_ids):
                     return False
                 if any(
-                    (resource_id, slot_id) in student_usage
-                    for resource_id in occurrence.student_resource_ids
+                        (resource_id, slot_id) in student_usage
+                        for resource_id in occurrence.student_resource_ids
                 ):
                     return False
             if (
-                data.spread_repeated_occurrences
-                and start.day_of_week in used_days[occurrence.session_id]
+                    data.spread_repeated_occurrences
+                    and start.day_of_week in used_days[occurrence.session_id]
             ):
                 return False
             return not check_dependencies or all(
@@ -165,7 +165,7 @@ class GreedyTimetableSolver:
                     dependency,
                     candidate_session_id=occurrence.session_id,
                     candidate_start=start,
-                    placed=placed,
+                    placed_starts_by_session=placed_starts_by_session,
                 )
                 for dependency in data.dependencies
                 if occurrence.session_id
@@ -176,17 +176,17 @@ class GreedyTimetableSolver:
             )
 
         def add_assignment(
-            occurrence: SessionOccurrence,
-            start: StartCandidate,
-            room_id: int,
-            *,
-            locked: bool,
+                occurrence: SessionOccurrence,
+                start: StartCandidate,
+                room_id: int,
+                *,
+                locked: bool,
         ) -> bool:
             if not resources_fit(
-                occurrence,
-                start,
-                room_id,
-                check_dependencies=not locked,
+                    occurrence,
+                    start,
+                    room_id,
+                    check_dependencies=not locked,
             ):
                 return False
             assignment = SolverAssignment(
@@ -200,6 +200,7 @@ class GreedyTimetableSolver:
                 ),
             )
             placed[occurrence.key] = (assignment, start)
+            placed_starts_by_session[occurrence.session_id].append(start)
             used_days[occurrence.session_id].add(start.day_of_week)
             for slot_id in start.occupied_slot_ids:
                 room_usage.add((room_id, slot_id))
@@ -233,23 +234,23 @@ class GreedyTimetableSolver:
                     continue
                 assigned = False
                 for start in sorted(
-                    occurrence.start_candidates,
-                    key=lambda candidate: (
-                        candidate.week_index,
-                        candidate.start_slot_id,
-                    ),
+                        occurrence.start_candidates,
+                        key=lambda candidate: (
+                                candidate.week_index,
+                                candidate.start_slot_id,
+                        ),
                 ):
                     for room in ordered_rooms(
-                        occurrence,
-                        start,
-                        data.rooms,
-                        self.room_strategy,
-                    ):
-                        if add_assignment(
                             occurrence,
                             start,
-                            room.id,
-                            locked=False,
+                            data.rooms,
+                            self.room_strategy,
+                    ):
+                        if add_assignment(
+                                occurrence,
+                                start,
+                                room.id,
+                                locked=False,
                         ):
                             assigned = True
                             break

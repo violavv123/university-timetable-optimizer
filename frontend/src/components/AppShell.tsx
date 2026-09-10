@@ -27,7 +27,7 @@ export function AppShell() {
   return (
     <div className="app-layout">
       <aside className={`sidebar${mobileOpen ? " sidebar--open" : ""}`}>
-        <div className="sidebar__brand"><div className="brand-mark"><Icon name="calendar" /></div><div><strong>Tempo</strong><span>Timetable optimizer</span></div></div>
+        <div className="sidebar__brand"><div className="brand-mark"><Icon name="calendar" /></div><div><strong>Time's UP</strong><span>Timetable optimizer</span></div><img className="sidebar__university-logo" src="/university-prishtina-logo.png" alt="University of Prishtina" /></div>
         <button className="sidebar__close" onClick={() => setMobileOpen(false)} aria-label="Close menu"><Icon name="x" /></button>
         <nav className="sidebar__nav" aria-label="Main navigation">
           <p>Workspace</p>
@@ -37,7 +37,7 @@ export function AppShell() {
       </aside>
       {mobileOpen && <button className="sidebar-overlay" onClick={() => setMobileOpen(false)} aria-label="Close navigation" />}
       <main className="main-content">
-        <div className="mobile-bar"><button onClick={() => setMobileOpen(true)} aria-label="Open menu"><Icon name="menu" /></button><strong>{current?.label ?? "Tempo"}</strong><div className="user-avatar">{user?.username.charAt(0).toUpperCase()}</div></div>
+        <div className="mobile-bar"><button onClick={() => setMobileOpen(true)} aria-label="Open menu"><Icon name="menu" /></button><strong>{current?.label ?? "Time's UP"}</strong><div className="user-avatar">{user?.username.charAt(0).toUpperCase()}</div></div>
         {generation.status !== "idle" && (
           <div
             className={`generation-strip generation-strip--${generation.status}`}
@@ -45,27 +45,27 @@ export function AppShell() {
             aria-live="polite"
           >
             <div className="generation-strip__icon">
-              {generation.status === "running" ? <span className="spinner" /> : <Icon name={generation.status === "succeeded" ? "check" : "x"} />}
+              <Icon name={generation.status === "succeeded" ? "check" : generation.status === "running" ? "clock" : "x"} />
             </div>
             <div className="generation-strip__copy">
               <strong>
                 {generation.status === "running"
                   ? `Generating ${generation.facultyName} timetable`
                   : generation.status === "succeeded"
-                    ? "Timetable generated successfully"
+                    ? "Timetable ready"
                     : "Timetable generation failed"}
               </strong>
               <span>
                 {generation.status === "running"
-                  ? `Solver active · ${formatElapsed(generation.elapsedSeconds)} elapsed · you can keep using the app`
+                  ? `${generation.stage} · ${formatElapsed(generation.elapsedSeconds)} elapsed`
                   : generation.status === "succeeded"
-                    ? `${generation.result?.name ?? "Your run"} is ready to review, validate and publish.`
+                    ? "Your timetable is ready to review."
                     : generation.errorMessage}
               </span>
             </div>
-            {generation.result && (
-              <Link className="generation-strip__action" to={`/runs/${generation.result.id}`}>
-                Open timetable <Icon name="arrow" />
+            {generation.status === "succeeded" && generation.results[0] && (
+              <Link className="generation-strip__action" to="/generate">
+                Review timetable <Icon name="arrow" />
               </Link>
             )}
             {generation.status === "running" && location.pathname !== "/generate" && (

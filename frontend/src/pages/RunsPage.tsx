@@ -11,7 +11,7 @@ export function RunsPage() {
   const [status, setStatus] = useState("");
   const [termId, setTermId] = useState("");
   const [search, setSearch] = useState("");
-  useEffect(() => { document.title = "Run history — Tempo"; }, []);
+  useEffect(() => { document.title = "Run history — Time's UP"; }, []);
 
   const terms = useQuery({ queryKey: ["terms"], queryFn: catalogService.terms });
   const runs = useQuery({

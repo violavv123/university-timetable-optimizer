@@ -9,7 +9,7 @@ import { formatDate, formatDuration, humanize } from "../lib/format";
 
 export function DashboardPage() {
   const { user } = useAuth();
-  useEffect(() => { document.title = "Overview — Tempo"; }, []);
+  useEffect(() => { document.title = "Overview — Time's UP"; }, []);
 
   const rooms = useQuery({ queryKey: ["rooms"], queryFn: catalogService.rooms });
   const staff = useQuery({ queryKey: ["staff"], queryFn: catalogService.staff });
