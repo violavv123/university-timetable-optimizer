@@ -33,7 +33,6 @@ def _register_exception_handler[ExceptionT: Exception](
     exception_type: type[ExceptionT],
     handler: TypedExceptionHandler[ExceptionT],
 ) -> None:
-    """Register a handler while preserving its concrete exception type."""
 
     app.add_exception_handler(
         exception_type,
@@ -264,7 +263,6 @@ async def unhandled_exception_handler(
 
 
 def register_exception_handlers(app: FastAPI) -> None:
-    """Register handlers once, immediately after creating the FastAPI app."""
 
     _register_exception_handler(
         app,

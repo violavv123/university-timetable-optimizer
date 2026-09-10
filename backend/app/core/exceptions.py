@@ -4,7 +4,6 @@ ErrorDetails = dict[str, Any] | list[Any] | None
 
 
 class AppError(Exception):
-    """Base class for expected, client-safe application errors."""
 
     status_code: ClassVar[int] = 500
     code: ClassVar[str] = "application_error"

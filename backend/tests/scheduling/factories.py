@@ -97,9 +97,7 @@ def occurrence(
         time_constraints=(),
         start_candidates=(candidate,),
         compatible_room_ids=frozenset({candidate_room.id}),
-        allowed_start_room_pairs=frozenset(
-            {(candidate.start_slot_id, candidate_room.id)}
-        ),
+        allowed_start_room_pairs=frozenset({(candidate.start_slot_id, candidate_room.id)}),
     )
 
 

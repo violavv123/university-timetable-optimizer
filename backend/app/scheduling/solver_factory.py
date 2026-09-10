@@ -22,7 +22,6 @@ def get_timetable_solver(algorithm: SchedulingAlgorithm) -> TimetableSolver:
 
 
 class DatabaseConfiguredTimetableSolver:
-    """Select the concrete engine from the persisted run configuration."""
 
     def __init__(self) -> None:
         self._active_solver: TimetableSolver | None = None

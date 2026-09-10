@@ -2,6 +2,7 @@
 target-version = "py313"
 line-length = 100
 src = ["app", "tests"]
+exclude = ["app/seeds/catalog.py"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]

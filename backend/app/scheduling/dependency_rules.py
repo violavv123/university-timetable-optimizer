@@ -11,25 +11,17 @@ def dependency_satisfied(
     predecessor_starts: Iterable[StartCandidate],
     successor_start: StartCandidate,
 ) -> bool:
-    """Return whether one successor occurrence satisfies a dependency.
-
-    ``DIFFERENT_DAY`` is intentionally universal: the successor must differ
-    from every predecessor occurrence.  The other dependency types are
-    existential: any predecessor occurrence may satisfy the relationship.
-    """
 
     predecessors = tuple(predecessor_starts)
     if not predecessors:
         return False
     if dependency.dependency_type == DependencyType.DIFFERENT_DAY:
         return all(
-            predecessor.day_of_week != successor_start.day_of_week
-            for predecessor in predecessors
+            predecessor.day_of_week != successor_start.day_of_week for predecessor in predecessors
         )
     if dependency.dependency_type == DependencyType.SAME_DAY:
         return any(
-            predecessor.day_of_week == successor_start.day_of_week
-            for predecessor in predecessors
+            predecessor.day_of_week == successor_start.day_of_week for predecessor in predecessors
         )
     for predecessor in predecessors:
         predecessor_end = predecessor.week_index + len(predecessor.occupied_slot_ids)

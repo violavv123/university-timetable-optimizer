@@ -34,7 +34,6 @@ def register_crud_routes(
     delete_service: DeleteService,
     filters_schema: type[BaseModel] = EmptyFilters,
 ) -> None:
-    """Register the standard list/get/create/update/delete HTTP contract."""
 
     operation_prefix = resource_name.replace(" ", "_").lower()
     filters_dependency = Depends(filters_schema)

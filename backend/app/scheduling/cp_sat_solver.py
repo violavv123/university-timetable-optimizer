@@ -34,16 +34,6 @@ from sqlalchemy.orm import Session
 MAX_SEARCH_WORKERS = 2
 FAST_PATH_OCCURRENCE_COUNT = 40
 
-# `solver.parameters.max_time_in_seconds` only bounds the CP-SAT search
-# itself. Building the model - in particular the per-occurrence
-# AddAllowedAssignments table over every valid (start slot, room) pair - is
-# plain Python work that runs *before* that timer starts, and its cost
-# scales with the total number of candidate pairs across all occurrences.
-# On a full-faculty dataset that table can reach millions of rows, which
-# turns "generation" into a many-minutes-long, un-cancellable Python loop
-# regardless of the solver time limit. If the input is that large, skip
-# building the CP-SAT model altogether and fall back to the much cheaper
-# greedy solver so a single result is still produced quickly.
 MAX_ALLOWED_PAIRS_FOR_CP_SAT = 5_000
 
 
@@ -88,7 +78,6 @@ class CpSatTimetableSolver:
         self._cancel_requested = False
 
     def cancel(self) -> None:
-        """Request cancellation of the currently running CP-SAT search."""
         self._cancel_requested = True
         if self._active_solver is not None:
             self._active_solver.stop_search()
@@ -114,12 +103,6 @@ class CpSatTimetableSolver:
         reason: str,
         **diagnostics: Any,
     ) -> SolverResult | None:
-        """Return a fast greedy result instead of building the CP-SAT model.
-
-        Returns None if the greedy solver itself could not find a feasible
-        placement, so the caller can proceed to the full CP-SAT attempt (or
-        report the failure) instead of silently losing the run.
-        """
         baseline = GreedyTimetableSolver(RoomStrategy.BFD).solve(data)
         if baseline.status != TimetableRunStatus.SUCCEEDED:
             baseline = GreedyTimetableSolver(RoomStrategy.FFD).solve(data)
@@ -149,11 +132,6 @@ class CpSatTimetableSolver:
             len(occurrence.allowed_start_room_pairs) for occurrence in data.occurrences
         )
 
-        # A large faculty run does not need a second global CP-SAT search for
-        # the demo workflow. The BFD placement is independently validated and
-        # is dramatically faster on a full faculty dataset. This applies to
-        # both CP-SAT and Hybrid so choosing CP-SAT cannot reintroduce the
-        # multi-minute model-building problem.
         fast_path_required = (
             occurrence_count >= FAST_PATH_OCCURRENCE_COUNT
             or total_allowed_pairs >= MAX_ALLOWED_PAIRS_FOR_CP_SAT
@@ -168,12 +146,6 @@ class CpSatTimetableSolver:
             if fallback is not None:
                 return fallback
 
-            # Do not continue into model construction after the quick
-            # baseline has failed on an oversized input. The CP-SAT timer
-            # cannot protect the Python-side model builder, so doing so can
-            # leave the HTTP request running for many minutes. The input
-            # validator has already confirmed that the failure is not caused
-            # by an empty candidate set; return a bounded failure instead.
             return SolverResult(
                 status=TimetableRunStatus.FAILED,
                 execution_time_ms=int((perf_counter() - started) * 1000),
@@ -261,9 +233,6 @@ class CpSatTimetableSolver:
                 )
                 room_intervals[room.id].append(room_interval)
 
-            # Computed once per occurrence rather than once per (start, room)
-            # row: it does not depend on either, and this loop can run for
-            # tens of thousands of rows on a single occurrence.
             preferred_constraints = tuple(
                 constraint
                 for constraint in occurrence.time_constraints
@@ -414,24 +383,13 @@ class CpSatTimetableSolver:
             model.add_hint(variables.start_option, hint_start_index)
             model.add_hint(variables.room_option, hint_room_index)
 
-        # An unlimited request means "do not impose a wall-clock limit", not
-        # "prove the best soft-constraint score". The latter can keep CP-SAT
-        # searching after it already has a valid timetable. Return the first
-        # feasible solution in unlimited mode; a positive limit still keeps
-        # the existing optimization objective.
         if not unlimited_search:
             model.minimize(sum(objective_terms))
         solver = cp_model.CpSolver()
         requested_workers = int(data.parameters.get("num_search_workers", MAX_SEARCH_WORKERS))
         effective_workers = min(MAX_SEARCH_WORKERS, max(1, requested_workers))
-        # CP-SAT interprets zero as no time limit. Do not clamp this value:
-        # users must be able to wait longer than the old 8/30-second caps.
         solver.parameters.max_time_in_seconds = max(0.0, requested_time_limit)
         solver.parameters.num_search_workers = effective_workers
-        # The application promises one final timetable, not a proof that the
-        # soft-constraint objective is mathematically optimal. Returning the
-        # first feasible solution prevents an unlimited optimization search
-        # from delaying a valid timetable indefinitely.
         solver.parameters.stop_after_first_solution = True
         solver.parameters.random_seed = int(data.parameters.get("random_seed", 0))
         solver.parameters.log_search_progress = bool(
@@ -462,10 +420,6 @@ class CpSatTimetableSolver:
                 },
             )
         if status not in {cp_model.OPTIMAL, cp_model.FEASIBLE}:
-            # A time-limited CP-SAT search can return UNKNOWN even though the
-            # constructive baseline already found a valid placement. Keep the
-            # request useful by returning that validated baseline instead of
-            # converting a timeout into a failed generation run.
             if status == cp_model.UNKNOWN:
                 fallback = self._greedy_fallback(
                     data,

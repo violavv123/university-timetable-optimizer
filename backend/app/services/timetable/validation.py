@@ -864,14 +864,18 @@ def _collect_resource_overlap_conflicts(
             for group_id in all_group_ids:
                 if group_id not in ancestor_cache:
                     ancestor_cache[group_id] = _group_ancestor_ids(db, group_id)
-            has_group_conflict = bool(first_groups.intersection(second_groups)) or any(
-                group_id in ancestor_cache[other_group_id]
-                for group_id in first_groups
-                for other_group_id in second_groups
-            ) or any(
-                group_id in ancestor_cache[other_group_id]
-                for group_id in second_groups
-                for other_group_id in first_groups
+            has_group_conflict = (
+                bool(first_groups.intersection(second_groups))
+                or any(
+                    group_id in ancestor_cache[other_group_id]
+                    for group_id in first_groups
+                    for other_group_id in second_groups
+                )
+                or any(
+                    group_id in ancestor_cache[other_group_id]
+                    for group_id in second_groups
+                    for other_group_id in first_groups
+                )
             )
             if has_group_conflict:
                 _append_conflict(

@@ -981,16 +981,14 @@ def _clone_winter_fixture() -> None:
         if winter_predecessor is None or winter_successor is None:
             continue
         winter_row = dict(row)
-        winter_row["key"] = (
-            f"{winter_predecessor}>{winter_successor}:"
-            f"{row['dependency_type']}"
-        )
+        winter_row["key"] = f"{winter_predecessor}>{winter_successor}:{row['dependency_type']}"
         winter_row["predecessor_session_key"] = winter_predecessor
         winter_row["successor_session_key"] = winter_successor
         COURSE_SESSION_DEPENDENCIES.append(winter_row)
 
 
 _clone_winter_fixture()
+
 
 def validate_seed_data() -> None:
     """Validate schema-level and solver-critical invariants before any insert."""
@@ -1317,9 +1315,7 @@ def validate_seed_data() -> None:
     ) -> None:
         windows: dict[tuple[str, str, int], list[SeedRow]] = defaultdict(list)
         for row in rows:
-            windows[
-                (row["academic_term_key"], row[resource_field], row["day_of_week"])
-            ].append(row)
+            windows[(row["academic_term_key"], row[resource_field], row["day_of_week"])].append(row)
         term_keys = {row["academic_term_key"] for row in rows}
         expected = {
             (term_key, resource_key, day)
