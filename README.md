@@ -26,7 +26,6 @@ The thesis contribution is centered on the scheduling engine: formalizing the ti
 - [API Overview](#api-overview)
 - [Running Tests](#running-tests)
 - [Thesis Context](#thesis-context)
-- [License](#license)
 
 ## Problem Statement
 
@@ -55,7 +54,7 @@ This is an instance of the **University Course Timetabling Problem (UCTP)**, a w
 - **Four selectable scheduling algorithms** per timetable run (see below), with locked/preserved assignments supported for re-optimization.
 - **Timetable lifecycle**: generate → inspect diagnostics/metrics → publish → re-optimize, with full session-assignment views.
 - **JWT-based admin authentication** for all protected API routes.
-- **Idempotent database seeding** with a realistic multi-program faculty fixture for demoing and testing.
+- **Idempotent database seeding** with a realistic multi-program FIEK fixture for demoing and testing. The fixture is intentionally static; production data should be entered through the API.
 - **React dashboard** for data entry, run management, and timetable visualization.
 
 ## Architecture
@@ -98,7 +97,7 @@ This is an instance of the **University Course Timetabling Problem (UCTP)**, a w
                               └─────────────┘
 ```
 
-Each router is protected by an `require_admin` JWT dependency (except `/auth/token`). Business rules (uniqueness, cross-entity validation, availability conflicts, curriculum consistency, etc.) live in the `services` layer, keeping routers thin and the scheduling engine decoupled from the web layer — the solvers only depend on a `SchedulingInput` domain object built by `input_loader`, not on the database session directly.
+Each protected router uses the `require_admin` JWT dependency; `/auth/token` and `/api/health` are public. Business rules (uniqueness, cross-entity validation, availability conflicts, curriculum consistency, etc.) live in the `services` layer, keeping routers thin and the scheduling engine decoupled from the web layer — the solvers only depend on a `SchedulingInput` domain object built by `input_loader`, not on the database session directly.
 
 ## Scheduling Algorithms
 
@@ -178,7 +177,7 @@ pip install -r requirements-dev.txt   # or requirements.txt for a production-onl
 cp .env.example .env
 # Edit .env: set DATABASE_URL to your Postgres instance, and generate
 # ADMIN_PASSWORD_HASH (argon2) and JWT_SECRET_KEY, e.g.:
-python -c "from app.core.security import hash_password; print(hash_password('choose-a-password'))"
+python -c "from pwdlib import PasswordHash; print(PasswordHash.recommended().hash('choose-a-password'))"
 python -c "import secrets; print(secrets.token_urlsafe(48))"
 
 alembic upgrade head              # apply database migrations
@@ -195,7 +194,7 @@ Interactive API docs are then available at `http://127.0.0.1:8000/docs`.
 
 ```bash
 cd frontend
-cp .env.example .env    # VITE_API_URL, defaults to http://127.0.0.1:8000/api
+cp .env.example .env    # VITE_API_URL, defaults to http://127.0.0.1:8000/api/v1
 npm install
 npm run dev              # http://localhost:5173
 ```
@@ -204,7 +203,7 @@ Log in with the `ADMIN_USERNAME` / password you configured on the backend.
 
 ## API Overview
 
-All routes are namespaced under `/api/v1`. Every group besides `/auth` requires a bearer token obtained from `/auth/token`.
+Application routes are namespaced under `/api/v1`; the health check is `/api/health`. Every group besides `/auth` requires a bearer token obtained from `/auth/token`.
 
 | Group | Purpose |
 |---|---|
@@ -212,16 +211,16 @@ All routes are namespaced under `/api/v1`. Every group besides `/auth` requires 
 | `/academic` | Faculties, levels, study programs, program semesters, academic years/terms, courses, curricula, elective groups |
 | `/resources` | Rooms, room availability, staff members, staff-course assignments, staff availability, student groups |
 | `/scheduling-input` | Time slots, scheduling profiles, course offerings/sessions, session dependencies, time constraints, program room preferences |
-| `/timetable` | Trigger timetable generation runs, inspect run status/diagnostics, view/edit session assignments, publish and re-optimize timetables |
+| `/timetables` | Trigger timetable generation runs, inspect run status/diagnostics, view/edit session assignments, publish, export, and re-optimize timetables |
 
 ## Running Tests
 
 ```bash
 cd backend
-pytest                       # full suite (unit tests run without extra setup)
-pytest -m integration        # requires a migrated PostgreSQL test database
+pytest                       # unit suite plus integration tests when TEST_DATABASE_URL is set
+TEST_DATABASE_URL=postgresql+psycopg://... pytest -m integration  # migrated PostgreSQL database required
 ruff check .                 # lint
-mypy .                       # type-check
+mypy app                     # type-check application code
 ```
 
 The `backend/tests/scheduling/` package contains dedicated tests for each solver (greedy strategies, CP-SAT, dependency rules, metrics, and room heuristics), independent of the API and database layers.
@@ -231,7 +230,4 @@ The `backend/tests/scheduling/` package contains dedicated tests for each solver
 - **Author:** _Viola Resyli_
 - **Institution / Faculty:** _"Universiteti i Prishtinës" - "Fakulteti i Inxhinierisë Elektrike Kompjuterike"_
 - **Supervisor:** _Prof. Avni Rexhepi_
-- **Academic year:** _2025/26_
-
-
-
+- **Academic year in the demo fixture:** _2026/27_
