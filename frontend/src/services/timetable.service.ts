@@ -39,7 +39,7 @@ export const timetableService = {
       )
     ).data;
   },
-  downloadCsv: async (run: TimetableRun) => {
+  downloadXlsx: async (run: TimetableRun) => {
     const { data } = await httpClient.get<Blob>(
       `/timetables/runs/${run.id}/download`,
       { responseType: "blob" },
@@ -47,7 +47,7 @@ export const timetableService = {
     const url = URL.createObjectURL(data);
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = `${run.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.csv`;
+    anchor.download = `${run.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.xlsx`;
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();

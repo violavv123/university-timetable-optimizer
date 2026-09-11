@@ -16,7 +16,7 @@ from app.schemas.timetable_entry import (
 )
 from app.schemas.timetable_run import TimetableRunCreate, TimetableRunRead, TimetableRunUpdate
 from app.services.timetable import timetable_entry, timetable_run
-from app.services.timetable.export import export_timetable_csv
+from app.services.timetable.export import export_timetable_xlsx
 from app.services.timetable.generation import generate_timetable
 from app.services.timetable.publication import publish_timetable_run, unpublish_timetable_run
 from app.services.timetable.reoptimization import prepare_reoptimized_run
@@ -30,7 +30,6 @@ _active_generation_solvers: dict[int, DatabaseConfiguredTimetableSolver] = {}
 
 
 def _run_generation_in_background(timetable_run_id: int) -> None:
-    """Solve a run without holding the HTTP request open."""
     db = SessionLocal()
     try:
         run = timetable_run.get_timetable_run(db, timetable_run_id)
@@ -135,9 +134,6 @@ def create_and_generate_run(
             parameters=payload.parameters.model_dump(),
         ),
     )
-    # Keep the dependency in the signature for backwards-compatible route
-    # overrides/tests; the worker creates a fresh configured solver and DB
-    # session after this response has been returned.
     del solver
     _queue_generation(background_tasks, run.id)
     return run
@@ -268,20 +264,20 @@ def validate_run(
 @router.get(
     "/runs/{timetable_run_id}/download",
     response_class=Response,
-    summary="Download a successful timetable as CSV",
+    summary="Download a successful timetable as XLSX",
 )
 def download_timetable(
     db: DbSession,
     timetable_run_id: int = Path(..., gt=0),
 ) -> Response:
-    filename, csv_content = export_timetable_csv(
+    filename, xlsx_content = export_timetable_xlsx(
         db,
         timetable_run_id,
     )
 
     return Response(
-        content=csv_content.encode("utf-8-sig"),
-        media_type="text/csv; charset=utf-8",
+        content=xlsx_content,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": (f'attachment; filename="{filename}"')},
     )
 
