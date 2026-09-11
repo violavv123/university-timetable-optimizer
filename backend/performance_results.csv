@@ -1,0 +1,5 @@
+algorithm,status,execution_time_ms,assigned_occurrences,unassigned_occurrences,rooms_used,unused_room_seats,student_gap_slots,staff_gap_slots,late_bsc_slots,master_outside_preferred_slots,hard_conflicts,soft_penalty
+FFD,SUCCEEDED,0,16,0,3,780,0,0,0,47,0,827
+BFD,SUCCEEDED,0,16,0,3,720,0,0,0,47,0,767
+CP-SAT,SUCCEEDED,197,16,0,3,680,0,0,0,43,0,723
+Hybrid,SUCCEEDED,142,16,0,3,680,0,0,0,43,0,723

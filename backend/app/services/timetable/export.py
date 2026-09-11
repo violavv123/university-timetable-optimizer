@@ -1,18 +1,16 @@
 import re
 from io import BytesIO
 
-from openpyxl import Workbook
-from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
-
 from app.core.exceptions import TimetablePublishError
 from app.models.enums import TimetableRunStatus
 from app.models.time_slot import TimeSlot
 from app.models.timetable_entry import TimetableEntry
 from app.services.timetable.timetable_run import get_timetable_run
 from app.services.timetable.validation import validate_timetable_run
+from openpyxl import Workbook
+from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-
 
 XLSX_HEADER = [
     "Time",
@@ -290,7 +288,10 @@ def export_timetable_xlsx(
     }
 
     workbook = Workbook()
-    workbook.remove(workbook.active)
+
+    active_sheet = workbook.active
+    if active_sheet is not None:
+        workbook.remove(active_sheet)
 
     workbook.properties.title = (
         f"Timetable run {run.id}"
